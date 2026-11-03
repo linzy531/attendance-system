@@ -1,0 +1,69 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f4f6f9;
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+.container {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  max-width: 450px;
+  width: 100%;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+/* 修正：讓下拉選單可以完整拉開、文字不被吃掉 */
+select {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+  background-color: #fff;
+  cursor: pointer;
+  box-sizing: border-box;
+  appearance: auto; /* 保留系統預設的下拉箭頭與展開選單 */
+}
+
+/* 增加選項的高度與字體大小，方便點擊 */
+select option {
+  padding: 10px;
+  font-size: 16px;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 15px;
+  border-radius: 6px;
+  border: none;
+  background-color: #007bff;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+button:hover { 
+  background-color: #0056b3; 
+}
+
+.camera-box {
+  margin: 15px 0;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+  height: 250px;
+}
+
+video { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: cover; 
+}
