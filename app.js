@@ -79,7 +79,7 @@ window.takePhoto = async function() {
     const docId = `${record.date}_${record.id}`;
     await setDoc(doc(db, "attendance", docId), record);
     const statusMsg = document.getElementById('statusMsg');
-    statusMsg.innerText = `✅ ${selectedStudent.name} 今日（${todayDateStr}）點名成功！`;
+    statusMsg.innerText = `${selectedStudent.name} 今日（${todayDateStr}）點名成功！`;
     statusMsg.style.color = "green";
   } catch (err) {
     console.error("提交點名失敗：", err);
