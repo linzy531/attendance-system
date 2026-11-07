@@ -19,7 +19,7 @@ window.onload = async () => {
     studentList = [];
 
     if (querySnapshot.empty) {
-      studentSelect.innerHTML = '<option value="">目前尚無學生名單</option>';
+      studentSelect.innerHTML = '<option value="">目前尚無團員名單</option>';
     } else {
       querySnapshot.forEach(docSnap => {
         const student = docSnap.data();
