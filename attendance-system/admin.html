@@ -2,95 +2,74 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>行政出席矩陣與名單管理總表</title>
   <link rel="stylesheet" href="style.css">
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-  <style>
-    .container { max-width: 95%; width: 100%; }
-    .table-wrapper { overflow-x: auto; margin-top: 20px; }
-    table { width: 100%; border-collapse: collapse; min-width: 600px; }
-    th, td { border: 1px solid #ddd; padding: 10px; text-align: center; font-size: 14px; }
-    th { background-color: #007bff; color: white; white-space: nowrap; }
-    .status-ok { color: green; font-weight: bold; }
-    .status-no { color: #dc3545; background-color: #fff0f0; }
-    .photo-thumb { width: 45px; height: 35px; object-fit: cover; border-radius: 4px; cursor: pointer; display: block; margin: 4px auto 0; }
-    
-    /* 名單編輯區塊樣式 */
-    .management-card {
-      background: #f8f9fa;
-      border: 1px solid #e9ecef;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 25px;
-      text-align: left;
-    }
-    .form-inline { display: flex; gap: 10px; margin-bottom: 15px; }
-    .form-inline input { padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
-    .student-tag {
-      display: inline-flex;
-      align-items: center;
-      background: #e9ecef;
-      padding: 5px 10px;
-      border-radius: 20px;
-      margin: 4px;
-      font-size: 14px;
-    }
-    .student-tag button {
-      background: #dc3545;
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 18px;
-      height: 18px;
-      line-height: 16px;
-      margin-left: 8px;
-      cursor: pointer;
-      padding: 0;
-      font-size: 12px;
-    }
-    #loginSection { max-width: 400px; margin: 40px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background: #fff; }
-  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
-  <div class="container">
+  <div class="admin-container">
     <!-- 登入區塊 -->
     <div id="loginSection">
-      <h2>行政管理員登入</h2>
-      <input type="email" id="loginEmail" placeholder="電子郵件" style="width:100%; padding:10px; margin-bottom:10px; box-sizing:border-box;">
-      <input type="password" id="loginPassword" placeholder="密碼" style="width:100%; padding:10px; margin-bottom:10px; box-sizing:border-box;">
-      <button onclick="loginWithEmail()">Email 登入</button>
-      <button style="background-color: #db4437; margin-top: 10px;" onclick="loginWithGoogle()">使用 Google 帳號登入</button>
-      <p id="loginError" style="color:red; margin-top:10px;"></p>
+      <h2 style="text-align: center; margin-bottom: 20px;">行政管理員登入</h2>
+      <input type="email" id="loginEmail" placeholder="電子郵件" style="width:100%; padding:12px; margin-bottom:12px; box-sizing:border-box; border:1px solid #ddd; border-radius:6px;">
+      <input type="password" id="loginPassword" placeholder="密碼" style="width:100%; padding:12px; margin-bottom:15px; box-sizing:border-box; border:1px solid #ddd; border-radius:6px;">
+      <button id="emailLoginBtn" style="width:100%; padding:12px; background-color:#0066cc; color:white; border:none; border-radius:6px; cursor:pointer;">Email 登入</button>
+      <button id="googleLoginBtn" style="width:100%; padding:12px; background-color: #db4437; color:white; border:none; border-radius:6px; margin-top: 10px; cursor:pointer;">使用 Google 帳號登入</button>
+      <p id="loginError" style="color:red; margin-top:10px; text-align:center;"></p>
+      <div style="margin-top: 20px; text-align: center;">
+        <a href="index.html" class="home-btn">回到點名首頁</a>
+      </div>
     </div>
 
-    <!-- 後台資料與名單管理區塊 -->
+    <!-- 後台內容區塊 -->
     <div id="adminContent" style="display: none;">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2>行政總台管理與出席表</h2>
-        <button onclick="logout()" style="width: auto; padding: 8px 16px; background-color: #6c757d;">登出</button>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button id="toggleAttendanceBtn" style="padding: 8px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; background-color: #28a745;">
+            開放中（點擊鎖定點名）
+          </button>
+          <a href="index.html" class="home-btn">回到點名首頁</a>
+          <button id="logoutBtn" style="padding: 8px 16px; background-color: #6c757d; color:white; border:none; border-radius:6px; cursor:pointer;">登出</button>
+        </div>
       </div>
 
-      <!-- ⚙️ 學生名單管理區塊（交接接班人可以直接在這裡增刪） -->
+      <!-- 統計圖表 -->
+      <div class="charts-container">
+        <div class="chart-box">
+          <h3 style="margin-bottom: 15px;">全體總出席率</h3>
+          <canvas id="overallPieChart"></canvas>
+        </div>
+        <div class="chart-box">
+          <h3 style="margin-bottom: 15px;">每日出席人數</h3>
+          <canvas id="dailyBarChart"></canvas>
+        </div>
+      </div>
+
+      <!-- 團員編輯 -->
       <div class="management-card">
-        <h3 style="margin-top:0;">📋 班級學生名單編輯</h3>
+        <h3 style="margin-top:0; margin-bottom: 15px;">樂團團員名單編輯</h3>
         <div class="form-inline">
-          <input type="text" id="newStudentId" placeholder="座號 (如: 01)" style="width: 100px;">
-          <input type="text" id="newStudentName" placeholder="學生姓名" style="width: 150px;">
-          <button onclick="addStudent()" style="width: auto; margin:0; padding: 8px 16px;">新增學生</button>
+          <input type="text" id="newStudentId" placeholder="學號 (如: 11411201)" style="width: 180px;">
+          <input type="text" id="newStudentName" placeholder="團員姓名" style="width: 150px;">
+          <button id="addStudentBtn" style="width: auto; margin:0; padding: 10px 18px; background-color:#0066cc; color:white; border:none; border-radius:6px; cursor:pointer;">新增團員</button>
         </div>
         <div id="studentListTags">名單載入中...</div>
       </div>
 
-      <!-- 📊 出席狀況矩陣表 -->
-      <h3>📊 出席紀錄總表</h3>
+      <!-- 出席總表與匯出 -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h3 style="margin: 0;">出席紀錄總表</h3>
+        <button id="exportExcelBtn" class="export-btn">匯出 Excel 報表</button>
+      </div>
+
       <div class="table-wrapper">
         <table>
           <thead>
             <tr id="tableHeader">
-              <th>座號</th>
+              <th>學號</th>
               <th>姓名</th>
             </tr>
           </thead>
@@ -98,143 +77,312 @@
         </table>
       </div>
 
-      <a href="index.html" style="margin-top:20px; display:inline-block;">← 返回學生點名頁</a>
+      <div style="margin-top: 25px;">
+        <a href="index.html" class="home-btn">回到點名首頁</a>
+      </div>
     </div>
+
+    <!-- 頁腳 -->
+    <footer>
+      <p class="footer-copy">
+        &copy; 國立臺灣藝術大學音樂學系管樂團 <span class="dev-code">Designed by Una Lin</span>
+      </p>
+    </footer>
   </div>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT_ID.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+  <script type="module">
+    import { auth, db } from "./firebase-config.js";
+    import { 
+      onAuthStateChanged, 
+      signInWithEmailAndPassword, 
+      GoogleAuthProvider, 
+      signInWithPopup, 
+      signOut 
+    } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+    import { 
+      collection, 
+      getDocs, 
+      doc, 
+      getDoc,
+      setDoc, 
+      deleteDoc 
+    } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
     let currentStudents = [];
+    let pieChartInstance = null;
+    let barChartInstance = null;
+    let isSystemOpen = true;
 
-    auth.onAuthStateChanged((user) => {
+    onAuthStateChanged(auth, (user) => {
+      const loginSection = document.getElementById('loginSection');
+      const adminContent = document.getElementById('adminContent');
       if (user) {
-        document.getElementById('loginSection').style.display = 'none';
-        document.getElementById('adminContent').style.display = 'block';
+        if (loginSection) loginSection.style.display = 'none';
+        if (adminContent) adminContent.style.display = 'block';
         loadAllData();
       } else {
-        document.getElementById('loginSection').style.display = 'block';
-        document.getElementById('adminContent').style.display = 'none';
+        if (loginSection) loginSection.style.display = 'block';
+        if (adminContent) adminContent.style.display = 'none';
       }
     });
 
-    function loginWithEmail() {
-      const email = document.getElementById('loginEmail').value;
-      const pass = document.getElementById('loginPassword').value;
-      auth.signInWithEmailAndPassword(email, pass).catch(err => {
-        document.getElementById('loginError').innerText = "登入失敗：" + err.message;
-      });
+    const emailLoginBtn = document.getElementById('emailLoginBtn');
+    if (emailLoginBtn) {
+      emailLoginBtn.onclick = () => {
+        const email = document.getElementById('loginEmail').value;
+        const pass = document.getElementById('loginPassword').value;
+        signInWithEmailAndPassword(auth, email, pass).catch(err => {
+          console.error("登入錯誤：", err);
+          const errEl = document.getElementById('loginError');
+          if (errEl) errEl.innerText = "登入失敗：" + err.message;
+        });
+      };
     }
 
-    function loginWithGoogle() {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider).catch(err => {
-        document.getElementById('loginError').innerText = "Google 登入失敗：" + err.message;
-      });
+    const googleLoginBtn = document.getElementById('googleLoginBtn');
+    if (googleLoginBtn) {
+      googleLoginBtn.onclick = () => {
+        const provider = new GoogleAuthProvider();
+        signInWithPopup(auth, provider).catch(err => {
+          console.error("Google 登入錯誤：", err);
+          const errEl = document.getElementById('loginError');
+          if (errEl) errEl.innerText = "Google 登入失敗：" + err.message;
+        });
+      };
     }
 
-    function logout() { auth.signOut(); }
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+      logoutBtn.onclick = () => signOut(auth);
+    }
 
-    // 載入所有資料（名單 + 點名矩陣）
+    // 點名開關控制 (加入 try-catch 防護)
+    const toggleBtn = document.getElementById('toggleAttendanceBtn');
+    async function checkSystemStatus() {
+      try {
+        const settingsRef = doc(db, "settings", "attendance");
+        const docSnap = await getDoc(settingsRef);
+        if (docSnap.exists()) {
+          isSystemOpen = docSnap.data().isOpen;
+        } else {
+          await setDoc(settingsRef, { isOpen: true });
+          isSystemOpen = true;
+        }
+      } catch (err) {
+        console.warn("無法存取設定文件，預設開放：", err);
+        isSystemOpen = true;
+      }
+      updateToggleUI();
+    }
+
+    function updateToggleUI() {
+      if (!toggleBtn) return;
+      if (isSystemOpen) {
+        toggleBtn.innerText = "開放中（點擊鎖定點名）";
+        toggleBtn.style.backgroundColor = "#28a745";
+      } else {
+        toggleBtn.innerText = "已鎖定（點擊開放點名）";
+        toggleBtn.style.backgroundColor = "#dc3545";
+      }
+    }
+
+    if (toggleBtn) {
+      toggleBtn.onclick = async () => {
+        try {
+          isSystemOpen = !isSystemOpen;
+          const settingsRef = doc(db, "settings", "attendance");
+          await setDoc(settingsRef, { isOpen: isSystemOpen });
+          updateToggleUI();
+          alert(`已將點名系統切換為：${isSystemOpen ? '開放中' : '已鎖定'}`);
+        } catch (err) {
+          alert("無法更新點名狀態，請確認 Firebase 權限！");
+          console.error(err);
+        }
+      };
+    }
+
+    const addStudentBtn = document.getElementById('addStudentBtn');
+    if (addStudentBtn) {
+      addStudentBtn.onclick = async () => {
+        const id = document.getElementById('newStudentId').value.trim();
+        const name = document.getElementById('newStudentName').value.trim();
+        if (!id || !name) {
+          alert("請填寫學號與姓名！");
+          return;
+        }
+        try {
+          await setDoc(doc(db, "students", id), { id, name });
+          document.getElementById('newStudentId').value = '';
+          document.getElementById('newStudentName').value = '';
+          loadAllData();
+        } catch (err) {
+          alert("新增失敗，請確認資料庫寫入權限！");
+          console.error(err);
+        }
+      };
+    }
+
+    const exportExcelBtn = document.getElementById('exportExcelBtn');
+    if (exportExcelBtn) {
+      exportExcelBtn.onclick = exportToExcel;
+    }
+
     async function loadAllData() {
+      await checkSystemStatus();
       await loadStudentManagement();
       await loadAttendanceData();
     }
 
-    // 1. 載入與渲染名單編輯區塊
     async function loadStudentManagement() {
-      const snapshot = await db.collection('students').orderBy('id').get();
-      currentStudents = [];
       const container = document.getElementById('studentListTags');
-      container.innerHTML = '';
+      try {
+        const querySnapshot = await getDocs(collection(db, "students"));
+        currentStudents = [];
+        if (!container) return;
+        container.innerHTML = '';
 
-      snapshot.forEach(doc => {
-        const s = doc.data();
-        currentStudents.push(s);
-        const tag = document.createElement('span');
-        tag.className = 'student-tag';
-        tag.innerHTML = `${s.id} ${s.name} <button onclick="deleteStudent('${s.id}')">×</button>`;
-        container.appendChild(tag);
-      });
-    }
+        if (querySnapshot.empty) {
+          container.innerHTML = '<span style="color:#888;">目前尚無團員資料，請由上方新增。</span>';
+          return;
+        }
 
-    // 2. 新增學生到雲端
-    async function addStudent() {
-      const id = document.getElementById('newStudentId').value.trim();
-      const name = document.getElementById('newStudentName').value.trim();
-      if (!id || !name) {
-        alert("請填寫座號與姓名！");
-        return;
-      }
-      await db.collection('students').doc(id).set({ id, name });
-      document.getElementById('newStudentId').value = '';
-      document.getElementById('newStudentName').value = '';
-      loadAllData();
-    }
-
-    // 3. 從雲端刪除學生
-    async function deleteStudent(id) {
-      if (confirm(`確定要刪除座號 ${id} 的學生嗎？`)) {
-        await db.collection('students').doc(id).delete();
-        loadAllData();
-      }
-    }
-
-    // 4. 渲染點名矩陣表
-    async function loadAttendanceData() {
-      const tableHeader = document.getElementById('tableHeader');
-      const tableBody = document.getElementById('tableBody');
-      tableHeader.innerHTML = '<th>座號</th><th>姓名</th>';
-      tableBody.innerHTML = '';
-
-      const snapshot = await db.collection('attendance').get();
-      const records = [];
-      snapshot.forEach(doc => records.push(doc.data()));
-
-      const uniqueDates = [...new Set(records.map(r => r.date))].sort();
-      if (uniqueDates.length === 0) {
-        uniqueDates.push(new Date().toISOString().split('T')[0]);
-      }
-
-      uniqueDates.forEach(date => {
-        const th = document.createElement('th');
-        th.textContent = date;
-        tableHeader.appendChild(th);
-      });
-
-      currentStudents.forEach(student => {
-        const tr = document.createElement('tr');
-        let rowHTML = `<td>${student.id}</td><td><b>${student.name}</b></td>`;
-
-        uniqueDates.forEach(date => {
-          const record = records.find(r => r.id === student.id && r.date === date);
-          if (record) {
-            rowHTML += `
-              <td class="status-ok">
-                ✅ ${record.time}
-                <a href="${record.photo}" target="_blank">
-                  <img src="${record.photo}" class="photo-thumb" title="點擊檢視照片">
-                </a>
-              </td>
-            `;
-          } else {
-            rowHTML += `<td class="status-no">缺席</td>`;
-          }
+        querySnapshot.forEach(docSnap => {
+          currentStudents.push(docSnap.data());
         });
 
-        tr.innerHTML = rowHTML;
-        tableBody.appendChild(tr);
+        currentStudents.sort((a, b) => a.id.localeCompare(b.id));
+
+        currentStudents.forEach(s => {
+          const tag = document.createElement('span');
+          tag.className = 'student-tag';
+          tag.innerHTML = `${s.id} ${s.name} `;
+          
+          const delBtn = document.createElement('button');
+          delBtn.textContent = '×';
+          delBtn.onclick = () => deleteStudent(s.id);
+          
+          tag.appendChild(delBtn);
+          container.appendChild(tag);
+        });
+      } catch (err) {
+        console.error("載入團員失敗：", err);
+        if (container) container.innerHTML = '<span style="color:red;">載入團員名單失敗，請檢查權限。</span>';
+      }
+    }
+
+    async function deleteStudent(id) {
+      if (confirm(`確定要刪除學號 ${id} 的團員嗎？`)) {
+        try {
+          await deleteDoc(doc(db, "students", id));
+          loadAllData();
+        } catch (err) {
+          alert("刪除失敗！");
+          console.error(err);
+        }
+      }
+    }
+
+    async function loadAttendanceData() {
+      try {
+        const tableHeader = document.getElementById('tableHeader');
+        const tableBody = document.getElementById('tableBody');
+        if (!tableHeader || !tableBody) return;
+        
+        tableHeader.innerHTML = '<th>學號</th><th>姓名</th>';
+        tableBody.innerHTML = '';
+
+        const querySnapshot = await getDocs(collection(db, "attendance"));
+        const records = [];
+        querySnapshot.forEach(docSnap => records.push(docSnap.data()));
+
+        const uniqueDates = [...new Set(records.map(r => r.date))].sort();
+        if (uniqueDates.length === 0) {
+          uniqueDates.push(new Date().toISOString().split('T')[0]);
+        }
+
+        uniqueDates.forEach(date => {
+          const th = document.createElement('th');
+          th.textContent = date;
+          tableHeader.appendChild(th);
+        });
+
+        let totalPresent = 0;
+        let totalSlots = currentStudents.length * uniqueDates.length;
+        let dailyCounts = {};
+        uniqueDates.forEach(d => dailyCounts[d] = 0);
+
+        currentStudents.forEach(student => {
+          const tr = document.createElement('tr');
+          let rowHTML = `<td>${student.id}</td><td><b>${student.name}</b></td>`;
+
+          uniqueDates.forEach(date => {
+            const record = records.find(r => r.id === student.id && r.date === date);
+            if (record) {
+              totalPresent++;
+              dailyCounts[date]++;
+              rowHTML += `
+                <td class="status-ok">
+                  ${record.time}
+                  <a href="${record.photo}" target="_blank">
+                    <img src="${record.photo}" class="photo-thumb" title="點擊檢視照片">
+                  </a>
+                </td>
+              `;
+            } else {
+              rowHTML += `<td class="status-no">缺席</td>`;
+            }
+          });
+
+          tr.innerHTML = rowHTML;
+          tableBody.appendChild(tr);
+        });
+
+        renderCharts(totalPresent, Math.max(0, totalSlots - totalPresent), uniqueDates, dailyCounts);
+      } catch (err) {
+        console.error("載入出席資料失敗：", err);
+      }
+    }
+
+    function renderCharts(presentCount, absentCount, dates, dailyCounts) {
+      if (pieChartInstance) pieChartInstance.destroy();
+      if (barChartInstance) barChartInstance.destroy();
+
+      const ctxPie = document.getElementById('overallPieChart').getContext('2d');
+      pieChartInstance = new Chart(ctxPie, {
+        type: 'pie',
+        data: {
+          labels: ['出席', '缺席'],
+          datasets: [{
+            data: [presentCount, absentCount],
+            backgroundColor: ['#28a745', '#dc3545']
+          }]
+        }
       });
+
+      const ctxBar = document.getElementById('dailyBarChart').getContext('2d');
+      barChartInstance = new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+          labels: dates,
+          datasets: [{
+            label: '每日出席人數',
+            data: dates.map(d => dailyCounts[d]),
+            backgroundColor: '#007bff'
+          }]
+        },
+        options: {
+          scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+      });
+    }
+
+    function exportToExcel() {
+      const table = document.querySelector('table');
+      const clonedTable = table.cloneNode(true);
+      clonedTable.querySelectorAll('img').forEach(img => img.remove());
+      
+      const wb = XLSX.utils.table_to_book(clonedTable, { sheet: "點名紀錄總表" });
+      XLSX.writeFile(wb, `點名出席總表_${new Date().toISOString().split('T')[0]}.xlsx`);
     }
   </script>
 </body>
