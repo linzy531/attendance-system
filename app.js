@@ -1,14 +1,6 @@
-// Firebase 初始化
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+// app.js
+import { db } from "./firebase-config.js";
+import { collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
 const video = document.getElementById('webcam');
 const studentSelect = document.getElementById('studentSelect');
@@ -18,20 +10,24 @@ let studentList = [];
 window.onload = async () => {
   const now = new Date();
   todayDateStr = now.toISOString().split('T')[0];
-  document.getElementById('todayDateDisplay').innerText = `點名日期：${todayDateStr}`;
+  const dateDisplay = document.getElementById('todayDateDisplay');
+  if (dateDisplay) dateDisplay.innerText = `點名日期：${todayDateStr}`;
 
-  // 從 Firebase 撈取動態名單並依座號排序
   try {
-    const snapshot = await db.collection('students').orderBy('id').get();
+    const querySnapshot = await getDocs(collection(db, "students"));
     studentSelect.innerHTML = '';
     studentList = [];
-    
-    if (snapshot.empty) {
+
+    if (querySnapshot.empty) {
       studentSelect.innerHTML = '<option value="">目前尚無學生名單</option>';
     } else {
-      snapshot.forEach(doc => {
-        const student = doc.data();
+      querySnapshot.forEach(docSnap => {
+        const student = docSnap.data();
         studentList.push(student);
+      });
+      studentList.sort((a, b) => a.id.localeCompare(b.id));
+
+      studentList.forEach(student => {
         const opt = document.createElement('option');
         opt.value = student.id;
         opt.textContent = `${student.id} - ${student.name}`;
@@ -55,7 +51,7 @@ async function startCamera() {
   }
 }
 
-async function takePhoto() {
+window.takePhoto = async function() {
   if (!studentSelect.value) {
     alert("請先選擇姓名！");
     return;
@@ -79,10 +75,14 @@ async function takePhoto() {
     photo: photoData
   };
 
-  // 寫入 Firebase 雲端點名紀錄
-  const docId = `${record.date}_${record.id}`;
-  await db.collection('attendance').doc(docId).set(record);
-
-  document.getElementById('statusMsg').innerText = `✅ ${selectedStudent.name} 今日（${todayDateStr}）點名成功！`;
-  document.getElementById('statusMsg').style.color = "green";
-}
+  try {
+    const docId = `${record.date}_${record.id}`;
+    await setDoc(doc(db, "attendance", docId), record);
+    const statusMsg = document.getElementById('statusMsg');
+    statusMsg.innerText = `✅ ${selectedStudent.name} 今日（${todayDateStr}）點名成功！`;
+    statusMsg.style.color = "green";
+  } catch (err) {
+    console.error("提交點名失敗：", err);
+    alert("提交失敗，請檢查網路連線或資料庫權限。");
+  }
+};
