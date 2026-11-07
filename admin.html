@@ -105,11 +105,11 @@
       </div>
 
       <div class="management-card">
-        <h3 style="margin-top:0;">班級學生名單編輯</h3>
+        <h3 style="margin-top:0;">樂團團員名單編輯</h3>
         <div class="form-inline">
-          <input type="text" id="newStudentId" placeholder="座號 (如: 01)" style="width: 100px;">
-          <input type="text" id="newStudentName" placeholder="學生姓名" style="width: 150px;">
-          <button id="addStudentBtn" style="width: auto; margin:0; padding: 8px 16px;">新增學生</button>
+          <input type="text" id="newStudentId" placeholder="學號 (如: 11411201)" style="width: 150px;">
+          <input type="text" id="newStudentName" placeholder="團員姓名" style="width: 150px;">
+          <button id="addStudentBtn" style="width: auto; margin:0; padding: 8px 16px;">新增團員</button>
         </div>
         <div id="studentListTags">名單載入中...</div>
       </div>
@@ -123,7 +123,7 @@
         <table>
           <thead>
             <tr id="tableHeader">
-              <th>座號</th>
+              <th>學號</th>
               <th>姓名</th>
             </tr>
           </thead>
@@ -136,6 +136,15 @@
       </div>
     </div>
   </div>
+
+  <footer style="text-align: center; margin-top: 50px; padding: 20px 15px; color: #aaa; font-size: 10px; font-family: monospace; border-top: 1px solid #f0f0f0;">
+    <p style="margin: 0 0 6px 0; color: #888; font-family: sans-serif; line-height: 1.5;">
+      【個人資料與影像安全聲明】<br>
+      本系統所採集之照片與出席紀錄僅供國立臺灣藝術大學音樂學系管樂團內部點名與行政核對使用。<br>
+      所有影像資料皆受系統存取控制防護，嚴禁非授權存取、外流或作任何第三方用途。
+    </p>
+    <p style="margin: 0;">&copy; 國立臺灣藝術大學音樂學系管樂團 &bull; <code style="font-size: 10px; color: #aaa;">/* dev: Una Lin */</code></p>
+  </footer>
 
   <script type="module">
     import { auth, db } from "./firebase-config.js";
@@ -206,7 +215,7 @@
           const id = document.getElementById('newStudentId').value.trim();
           const name = document.getElementById('newStudentName').value.trim();
           if (!id || !name) {
-            alert("請填寫座號與姓名！");
+            alert("請填寫學號與姓名！");
             return;
           }
           await setDoc(doc(db, "students", id), { id, name });
@@ -255,7 +264,7 @@
     }
 
     async function deleteStudent(id) {
-      if (confirm(`確定要刪除座號 ${id} 的學生嗎？`)) {
+      if (confirm(`確定要刪除學號 ${id} 的團員嗎？`)) {
         await deleteDoc(doc(db, "students", id));
         loadAllData();
       }
@@ -266,7 +275,7 @@
       const tableBody = document.getElementById('tableBody');
       if (!tableHeader || !tableBody) return;
       
-      tableHeader.innerHTML = '<th>座號</th><th>姓名</th>';
+      tableHeader.innerHTML = '<th>學號</th><th>姓名</th>';
       tableBody.innerHTML = '';
 
       const querySnapshot = await getDocs(collection(db, "attendance"));
