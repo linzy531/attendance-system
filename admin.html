@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>行政出席矩陣與名單管理總表</title>
   <link rel="stylesheet" href="style.css">
-  <!-- 引入 Chart.js 圖表庫與 SheetJS Excel 匯出庫 -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
@@ -86,20 +85,19 @@
         <button id="logoutBtn" style="width: auto; padding: 8px 16px; background-color: #6c757d;">登出</button>
       </div>
 
-      <!-- 統計圖表區塊 -->
       <div class="charts-container">
         <div class="chart-box">
-          <h3>📊 全體總出席率</h3>
+          <h3>全體總出席率</h3>
           <canvas id="overallPieChart"></canvas>
         </div>
         <div class="chart-box">
-          <h3>📅 每日出席人數</h3>
+          <h3>每日出席人數</h3>
           <canvas id="dailyBarChart"></canvas>
         </div>
       </div>
 
       <div class="management-card">
-        <h3 style="margin-top:0;">📋 班級學生名單編輯</h3>
+        <h3 style="margin-top:0;">班級學生名單編輯</h3>
         <div class="form-inline">
           <input type="text" id="newStudentId" placeholder="座號 (如: 01)" style="width: 100px;">
           <input type="text" id="newStudentName" placeholder="學生姓名" style="width: 150px;">
@@ -109,8 +107,8 @@
       </div>
 
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h3 style="margin: 0;">📊 出席紀錄總表</h3>
-        <button id="exportExcelBtn" class="export-btn">📥 匯出 Excel 報表</button>
+        <h3 style="margin: 0;">出席紀錄總表</h3>
+        <button id="exportExcelBtn" class="export-btn">匯出 Excel 報表</button>
       </div>
 
       <div class="table-wrapper">
@@ -292,7 +290,7 @@
             dailyCounts[date]++;
             rowHTML += `
               <td class="status-ok">
-                ✅ ${record.time}
+                ${record.time}
                 <a href="${record.photo}" target="_blank">
                   <img src="${record.photo}" class="photo-thumb" title="點擊檢視照片">
                 </a>
