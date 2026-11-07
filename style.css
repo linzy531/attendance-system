@@ -283,3 +283,32 @@ footer {
   border-radius: 6px;
   background: #fafafa;
 }
+
+/* 頂部按鈕完美對齊（強效重置版） */
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.top-nav-btn {
+  height: 38px;
+  line-height: 38px;
+  padding: 0 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  display: inline-block;
+  vertical-align: middle;
+  text-decoration: none;
+  box-sizing: border-box;
+  margin: 0;
+}
+
+.btn-toggle-open { background-color: #28a745; color: white; }
+.btn-toggle-close { background-color: #dc3545; color: white; }
+.btn-home { background-color: #17a2b8; color: white; }
+.btn-logout { background-color: #6c757d; color: white; }
