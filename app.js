@@ -1,43 +1,44 @@
 // app.js
 import { db } from "./firebase-config.js";
-import { collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+import { collection, onSnapshot, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
 const video = document.getElementById('webcam');
 const studentSelect = document.getElementById('studentSelect');
 let todayDateStr = "";
 let studentList = [];
 
-window.onload = async () => {
+window.onload = () => {
   const now = new Date();
   todayDateStr = now.toISOString().split('T')[0];
   const dateDisplay = document.getElementById('todayDateDisplay');
   if (dateDisplay) dateDisplay.innerText = `點名日期：${todayDateStr}`;
 
-  try {
-    const querySnapshot = await getDocs(collection(db, "students"));
+  // 使用 onSnapshot 即時監聽與快取名單
+  onSnapshot(collection(db, "students"), (snapshot) => {
     studentSelect.innerHTML = '';
     studentList = [];
 
-    if (querySnapshot.empty) {
+    if (snapshot.empty) {
       studentSelect.innerHTML = '<option value="">目前尚無學生名單</option>';
-    } else {
-      querySnapshot.forEach(docSnap => {
-        const student = docSnap.data();
-        studentList.push(student);
-      });
-      studentList.sort((a, b) => a.id.localeCompare(b.id));
-
-      studentList.forEach(student => {
-        const opt = document.createElement('option');
-        opt.value = student.id;
-        opt.textContent = `${student.id} - ${student.name}`;
-        studentSelect.appendChild(opt);
-      });
+      return;
     }
-  } catch (err) {
-    console.error("載入名單失敗：", err);
+
+    snapshot.forEach(docSnap => {
+      studentList.push(docSnap.data());
+    });
+
+    studentList.sort((a, b) => a.id.localeCompare(b.id));
+
+    studentList.forEach(student => {
+      const opt = document.createElement('option');
+      opt.value = student.id;
+      opt.textContent = `${student.id} - ${student.name}`;
+      studentSelect.appendChild(opt);
+    });
+  }, (err) => {
+    console.error("即時同步名單失敗：", err);
     studentSelect.innerHTML = '<option value="">名單載入失敗</option>';
-  }
+  });
 
   startCamera();
 };
@@ -64,7 +65,7 @@ window.takePhoto = async function() {
   const ctx = canvas.getContext('2d');
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-  const photoData = canvas.toDataURL('image/jpeg');
+  const photoData = canvas.toDataURL('image/jpeg', 0.6); // 壓縮照片畫質減少儲存與傳輸延遲
   const selectedStudent = studentList.find(s => s.id === studentSelect.value);
 
   const record = {
