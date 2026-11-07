@@ -28,9 +28,8 @@
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2>行政總台管理與出席表</h2>
         <div style="display: flex; align-items: center; gap: 10px;">
-          <!-- 點名開放/鎖定控制按鈕 -->
           <button id="toggleAttendanceBtn" style="padding: 8px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; background-color: #28a745;">
-            載入狀態中...
+            開放中（點擊鎖定點名）
           </button>
           <a href="index.html" class="home-btn">回到點名首頁</a>
           <button id="logoutBtn" style="padding: 8px 16px; background-color: #6c757d; color:white; border:none; border-radius:6px; cursor:pointer;">登出</button>
@@ -160,18 +159,23 @@
     // 點名開關控制
     const toggleBtn = document.getElementById('toggleAttendanceBtn');
     async function checkSystemStatus() {
-      const settingsRef = doc(db, "settings", "attendance");
-      const docSnap = await getDoc(settingsRef);
-      if (docSnap.exists()) {
-        isSystemOpen = docSnap.data().isOpen;
-      } else {
-        await setDoc(settingsRef, { isOpen: true });
+      try {
+        const settingsRef = doc(db, "settings", "attendance");
+        const docSnap = await getDoc(settingsRef);
+        if (docSnap.exists()) {
+          isSystemOpen = docSnap.data().isOpen;
+        } else {
+          isSystemOpen = true;
+        }
+      } catch (err) {
+        console.warn("無權限存取系統設定，預設開啟：", err);
         isSystemOpen = true;
       }
       updateToggleUI();
     }
 
     function updateToggleUI() {
+      if (!toggleBtn) return;
       if (isSystemOpen) {
         toggleBtn.innerText = "開放中（點擊鎖定點名）";
         toggleBtn.style.backgroundColor = "#28a745";
@@ -183,11 +187,16 @@
 
     if (toggleBtn) {
       toggleBtn.onclick = async () => {
-        isSystemOpen = !isSystemOpen;
-        const settingsRef = doc(db, "settings", "attendance");
-        await setDoc(settingsRef, { isOpen: isSystemOpen });
-        updateToggleUI();
-        alert(`已將點名系統切換為：${isSystemOpen ? '開放中' : '已鎖定'}`);
+        try {
+          isSystemOpen = !isSystemOpen;
+          const settingsRef = doc(db, "settings", "attendance");
+          await setDoc(settingsRef, { isOpen: isSystemOpen });
+          updateToggleUI();
+          alert(`已將點名系統切換為：${isSystemOpen ? '開放中' : '已鎖定'}`);
+        } catch (err) {
+          alert("無法更新狀態，請確認 Firebase Rules 權限設定！");
+          console.error(err);
+        }
       };
     }
 
@@ -200,10 +209,15 @@
           alert("請填寫學號與姓名！");
           return;
         }
-        await setDoc(doc(db, "students", id), { id, name });
-        document.getElementById('newStudentId').value = '';
-        document.getElementById('newStudentName').value = '';
-        loadAllData();
+        try {
+          await setDoc(doc(db, "students", id), { id, name });
+          document.getElementById('newStudentId').value = '';
+          document.getElementById('newStudentName').value = '';
+          loadAllData();
+        } catch (err) {
+          alert("新增失敗，請確認 Firebase Rules 寫入權限！");
+          console.error(err);
+        }
       };
     }
 
@@ -219,12 +233,17 @@
     }
 
     async function loadStudentManagement() {
+      const container = document.getElementById('studentListTags');
       try {
         const querySnapshot = await getDocs(collection(db, "students"));
         currentStudents = [];
-        const container = document.getElementById('studentListTags');
         if (!container) return;
         container.innerHTML = '';
+
+        if (querySnapshot.empty) {
+          container.innerHTML = '<span style="color:#888;">目前尚無團員資料，請由上方輸入欄新增。</span>';
+          return;
+        }
 
         querySnapshot.forEach(docSnap => {
           currentStudents.push(docSnap.data());
@@ -246,13 +265,19 @@
         });
       } catch (err) {
         console.error("載入團員失敗：", err);
+        if (container) container.innerHTML = `<span style="color:red;">載入失敗（權限不足）：請檢查 Firebase Rules。</span>`;
       }
     }
 
     async function deleteStudent(id) {
       if (confirm(`確定要刪除學號 ${id} 的團員嗎？`)) {
-        await deleteDoc(doc(db, "students", id));
-        loadAllData();
+        try {
+          await deleteDoc(doc(db, "students", id));
+          loadAllData();
+        } catch (err) {
+          alert("刪除失敗！");
+          console.error(err);
+        }
       }
     }
 
