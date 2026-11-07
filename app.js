@@ -38,7 +38,7 @@ window.onload = async () => {
     };
   }
 
-  // 2. 檢查點名開放狀態 (全防護容錯)
+  // 2. 檢查點名開放狀態
   await checkSystemOpen();
 
   // 3. 載入團員名單
