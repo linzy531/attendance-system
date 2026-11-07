@@ -9,9 +9,9 @@
 <body>
   <div class="container">
     <h2>台藝大管樂線上點名系統</h2>
-    <p id="todayDateDisplay" style="color: #666; font-weight: bold;"></p>
+    <p id="todayDateDisplay"></p>
     
-    <label for="studentSelect" style="margin-top: 15px; display: block;">請選擇您的姓名：</label>
+    <label for="studentSelect">請選擇您的姓名：</label>
     <select id="studentSelect">
       <option value="">-- 載入名單中... --</option>
     </select>
@@ -23,17 +23,19 @@
 
     <button id="captureBtn" onclick="takePhoto()">拍照並提交點名</button>
     <p id="statusMsg"></p>
-    <a href="admin.html" style="margin-top: 15px; display: inline-block;">切換至行政點名矩陣總表</a>
-  </div>
+    
+    <a href="admin.html">切換至行政點名矩陣總表</a>
 
-  <footer style="text-align: center; margin-top: 50px; padding: 20px 15px; color: #aaa; font-size: 10px; font-family: monospace; border-top: 1px solid #f0f0f0;">
-    <p style="margin: 0 0 6px 0; color: #888; font-family: sans-serif; line-height: 1.5;">
-      【個人資料與影像安全聲明】<br>
-      本系統所採集之照片與出席紀錄僅供國立臺灣藝術大學音樂學系管樂團內部點名與行政核對使用。<br>
-      所有影像資料皆受系統存取控制防護，嚴禁非授權存取、外流或作任何第三方用途。
-    </p>
-    <p style="margin: 0;">&copy; 國立臺灣藝術大學音樂學系管樂團 &bull; <code style="font-size: 10px; color: #aaa;">/* dev: Una Lin */</code></p>
-  </footer>
+    <!-- 把 footer 放在 container 裡面，跟著白框一起置中 -->
+    <footer>
+      <p style="margin-bottom: 4px;">
+        【個人資料與影像安全聲明】<br>
+        本系統所採集之照片與出席紀錄僅供國立臺灣藝術大學音樂學系管樂團內部點名與行政核對使用。<br>
+        所有影像資料皆受系統存取控制防護，嚴禁非授權存取、外流或作任何第三方用途。
+      </p>
+      <p>&copy; 國立臺灣藝術大學音樂學系管樂團 &bull; <code>/* dev: Una Lin */</code></p>
+    </footer>
+  </div>
 
   <script type="module" src="app.js"></script>
 </body>
