@@ -8,6 +8,41 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
+    /* 頂部導覽按鈕對齊（強效修復） */
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .top-nav-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .top-nav-btn {
+      height: 38px;
+      padding: 0 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      box-sizing: border-box;
+      margin: 0 !important;
+      line-height: 1;
+    }
+    
+    .btn-toggle-open { background-color: #28a745; color: white; }
+    .btn-toggle-close { background-color: #dc3545; color: white; }
+    .btn-home { background-color: #17a2b8; color: white; }
+    .btn-logout { background-color: #6c757d; color: white; }
+
+    /* 高風險區塊 */
     .danger-card {
       background: #fff;
       border-radius: 12px;
@@ -24,7 +59,6 @@
     }
     .btn-purge {
       height: 38px;
-      line-height: 38px;
       background-color: #dc3545;
       color: white;
       padding: 0 18px;
@@ -33,8 +67,8 @@
       cursor: pointer;
       font-weight: 600;
       font-size: 14px;
-      display: inline-block;
-      vertical-align: middle;
+      display: inline-flex;
+      align-items: center;
     }
     .btn-purge:hover { background-color: #bd2130; }
 
@@ -49,6 +83,7 @@
     }
     .btn-del-single:hover { color: #a71d2a; font-weight: bold; }
 
+    /* 彈窗 Log 樣式 */
     .log-modal-overlay {
       display: none;
       position: fixed;
@@ -103,10 +138,10 @@
 
     <!-- 後台內容區塊 -->
     <div id="adminContent" style="display: none;">
-      <!-- 頂部按鈕完全齊平導覽列 -->
+      <!-- 頂部對齊導覽列 -->
       <div class="admin-header">
         <h2>行政總台管理與出席表</h2>
-        <div style="display: flex; align-items: center; gap: 10px;">
+        <div class="top-nav-group">
           <button id="toggleAttendanceBtn" class="top-nav-btn btn-toggle-open">
             開放中（點擊鎖定點名）
           </button>
@@ -127,7 +162,7 @@
         </div>
       </div>
 
-      <!-- 團員編輯 -->
+      <!-- 團員名單編輯 -->
       <div class="management-card">
         <h3 style="margin-top:0; margin-bottom: 15px;">樂團團員名單編輯</h3>
         <div class="form-inline">
@@ -138,7 +173,7 @@
         <div id="studentListTags">名單載入中...</div>
       </div>
 
-      <!-- 高風險清理區塊 -->
+      <!-- 高風險清理區塊 (併排) -->
       <div class="danger-card">
         <h3 style="margin-top:0; margin-bottom: 12px; font-size: 16px; color: #dc3545;">高風險資料安全處置</h3>
         <div class="danger-actions">
@@ -147,7 +182,7 @@
         </div>
       </div>
 
-      <!-- 出席總表與匯出 Excel 位置 -->
+      <!-- 出席總表與匯出 Excel -->
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
         <h3 style="margin: 0;">出席紀錄總表 <span style="font-size:12px; font-weight:normal; color:#666;">（可點擊時間旁的 🗑️ 刪除單筆紀錄）</span></h3>
         <button id="exportExcelBtn" class="export-btn">匯出 Excel 報表</button>
@@ -170,7 +205,7 @@
       </div>
     </div>
 
-    <!-- 頁腳 (無聲明) -->
+    <!-- 頁腳 -->
     <footer>
       <p class="footer-copy">
         &copy; 國立臺灣藝術大學音樂學系管樂團 <span class="dev-code">Designed by Una Lin</span>
@@ -216,7 +251,7 @@
     let barChartInstance = null;
     let isSystemOpen = true;
 
-    // 監聽 Firebase 登入狀態變更
+    // 登入狀態監聽與安全切換
     onAuthStateChanged(auth, (user) => {
       const loginSection = document.getElementById('loginSection');
       const adminContent = document.getElementById('adminContent');
@@ -231,39 +266,35 @@
       }
     });
 
-    // Email 登入邏輯（附帶具體錯誤提示）
+    // Email 登入按鈕綁定（加入 preventDefault 防刷）
     const emailLoginBtn = document.getElementById('emailLoginBtn');
     if (emailLoginBtn) {
-      emailLoginBtn.addEventListener('click', async () => {
+      emailLoginBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
         const email = document.getElementById('loginEmail').value.trim();
         const pass = document.getElementById('loginPassword').value.trim();
         const errEl = document.getElementById('loginError');
         if (errEl) errEl.innerText = "";
         
         if (!email || !pass) {
-          if (errEl) errEl.innerText = "請輸入電子郵件與密碼！";
+          if (errEl) errEl.innerText = "請填寫 Email 與密碼！";
           return;
         }
 
         try {
           await signInWithEmailAndPassword(auth, email, pass);
         } catch (err) {
-          console.error("登入失敗：", err);
-          if (errEl) {
-            if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
-              errEl.innerText = "登入失敗：帳號或密碼不正確！";
-            } else {
-              errEl.innerText = `登入失敗：${err.message}`;
-            }
-          }
+          console.error("登入錯誤：", err);
+          if (errEl) errEl.innerText = "登入失敗：" + err.message;
         }
       });
     }
 
-    // Google 登入邏輯
+    // Google 登入按鈕綁定
     const googleLoginBtn = document.getElementById('googleLoginBtn');
     if (googleLoginBtn) {
-      googleLoginBtn.addEventListener('click', async () => {
+      googleLoginBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
         const provider = new GoogleAuthProvider();
         const errEl = document.getElementById('loginError');
         if (errEl) errEl.innerText = "";
@@ -272,18 +303,18 @@
           await signInWithPopup(auth, provider);
         } catch (err) {
           console.error("Google 登入失敗：", err);
-          if (errEl) errEl.innerText = `Google 登入失敗：${err.message}`;
+          if (errEl) errEl.innerText = "Google 登入失敗：" + err.message;
         }
       });
     }
 
-    // 登出邏輯
+    // 登出按鈕
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
-      logoutBtn.addEventListener('click', () => signOut(auth));
+      logoutBtn.onclick = () => signOut(auth);
     }
 
-    // 點名開關控制
+    // 開關控制邏輯 (merge: true 防護)
     const toggleBtn = document.getElementById('toggleAttendanceBtn');
     async function checkSystemStatus() {
       try {
@@ -295,7 +326,7 @@
           isSystemOpen = true;
         }
       } catch (err) {
-        console.warn("無法取得系統設定，預設開放：", err);
+        console.warn("無法存取設定，預設開放：", err);
         isSystemOpen = true;
       }
       updateToggleUI();
@@ -328,7 +359,7 @@
       };
     }
 
-    // Log Modal 彈窗控制
+    // Modal 彈窗
     const openLogModalBtn = document.getElementById('openLogModalBtn');
     const closeLogModalBtn = document.getElementById('closeLogModalBtn');
     const logModal = document.getElementById('logModal');
@@ -358,7 +389,7 @@
           document.getElementById('newStudentName').value = '';
           loadAllData();
         } catch (err) {
-          alert("新增失敗，請確認 Firebase 寫入權限！");
+          alert("新增失敗，請檢查權限！");
           console.error(err);
         }
       };
@@ -384,7 +415,7 @@
           details: details
         });
       } catch (err) {
-        console.warn("無法寫入刪除日誌：", err);
+        console.warn("寫入刪除日誌受阻：", err);
       }
     }
 
@@ -408,7 +439,7 @@
           </div>
         `).join('');
       } catch (err) {
-        logListEl.innerHTML = '<div class="log-item" style="color:#888;">尚未開啟日誌讀取權限或無紀錄。</div>';
+        logListEl.innerHTML = '<div class="log-item" style="color:#888;">尚未開啟日誌讀取權限或目前無紀錄。</div>';
       }
     }
 
@@ -445,7 +476,7 @@
         });
       } catch (err) {
         console.error("載入團員失敗：", err);
-        if (container) container.innerHTML = `<span style="color:red;">載入團員名單失敗，請確認 Rules 讀取權限。</span>`;
+        if (container) container.innerHTML = `<span style="color:red;">載入團員名單失敗，請確認 Firebase Rules 權限。</span>`;
       }
     }
 
