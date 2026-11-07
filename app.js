@@ -7,6 +7,10 @@ const studentSelect = document.getElementById('studentSelect');
 const agreeCheckbox = document.getElementById('agreeCheckbox');
 const captureBtn = document.getElementById('captureBtn');
 
+const openModalBtn = document.getElementById('openModalBtn');
+const termsModal = document.getElementById('termsModal');
+const confirmAgreeBtn = document.getElementById('confirmAgreeBtn');
+
 let todayDateStr = "";
 let studentList = [];
 
@@ -16,18 +20,20 @@ window.onload = async () => {
   const dateDisplay = document.getElementById('todayDateDisplay');
   if (dateDisplay) dateDisplay.innerText = `點名日期：${todayDateStr}`;
 
-  // 監聽 Checkbox 勾選狀態，控制按鈕啟用/停用
-  if (agreeCheckbox && captureBtn) {
-    agreeCheckbox.onchange = () => {
-      if (agreeCheckbox.checked) {
-        captureBtn.disabled = false;
-        captureBtn.style.opacity = "1";
-        captureBtn.style.cursor = "pointer";
-      } else {
-        captureBtn.disabled = true;
-        captureBtn.style.opacity = "0.5";
-        captureBtn.style.cursor = "not-allowed";
-      }
+  // 1. 彈窗控制邏輯
+  if (openModalBtn && termsModal && confirmAgreeBtn) {
+    // 點擊連結開啟彈窗
+    openModalBtn.onclick = () => {
+      termsModal.style.display = 'flex';
+    };
+
+    // 點擊「我已閱讀並同意條款」按鈕：自動打勾並解鎖拍照按鈕
+    confirmAgreeBtn.onclick = () => {
+      termsModal.style.display = 'none';
+      agreeCheckbox.checked = true;
+      captureBtn.disabled = false;
+      captureBtn.style.opacity = "1";
+      captureBtn.style.cursor = "pointer";
     };
   }
 
@@ -71,7 +77,7 @@ async function startCamera() {
 
 window.takePhoto = async function() {
   if (!agreeCheckbox.checked) {
-    alert("請先勾選同意個人資料與影像安全聲明！");
+    alert("請先點擊連結閱讀並同意個資與安全聲明！");
     return;
   }
 
