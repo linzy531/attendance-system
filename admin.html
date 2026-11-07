@@ -18,40 +18,79 @@
     let currentStudents = [];
     let currentRecords = [];
 
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        document.getElementById('loginSection').style.display = 'none';
-        document.getElementById('adminContent').style.display = 'block';
-        initRealtimeListeners();
-      } else {
-        document.getElementById('loginSection').style.display = 'block';
-        document.getElementById('adminContent').style.display = 'none';
+    // 確保 HTML DOM 完全載入後才執行 JS
+    document.addEventListener('DOMContentLoaded', () => {
+      
+      // 1. 監聽 Authentication 狀態
+      onAuthStateChanged(auth, (user) => {
+        const loginSection = document.getElementById('loginSection');
+        const adminContent = document.getElementById('adminContent');
+        
+        if (user) {
+          if (loginSection) loginSection.style.display = 'none';
+          if (adminContent) adminContent.style.display = 'block';
+          initRealtimeListeners();
+        } else {
+          if (loginSection) loginSection.style.display = 'block';
+          if (adminContent) adminContent.style.display = 'none';
+        }
+      });
+
+      // 2. 綁定 Email 登入按鈕
+      const emailLoginBtn = document.getElementById('emailLoginBtn');
+      if (emailLoginBtn) {
+        emailLoginBtn.onclick = () => {
+          const email = document.getElementById('loginEmail').value;
+          const pass = document.getElementById('loginPassword').value;
+          signInWithEmailAndPassword(auth, email, pass).catch(err => {
+            const errEl = document.getElementById('loginError');
+            if (errEl) errEl.innerText = "登入失敗：" + err.message;
+          });
+        };
+      }
+
+      // 3. 綁定 Google 登入按鈕
+      const googleLoginBtn = document.getElementById('googleLoginBtn');
+      if (googleLoginBtn) {
+        googleLoginBtn.onclick = () => {
+          const provider = new GoogleAuthProvider();
+          signInWithPopup(auth, provider).catch(err => {
+            const errEl = document.getElementById('loginError');
+            if (errEl) errEl.innerText = "Google 登入失敗：" + err.message;
+          });
+        };
+      }
+
+      // 4. 綁定登出按鈕
+      const logoutBtn = document.getElementById('logoutBtn');
+      if (logoutBtn) {
+        logoutBtn.onclick = () => signOut(auth);
+      }
+
+      // 5. 綁定新增學生按鈕
+      const addStudentBtn = document.getElementById('addStudentBtn');
+      if (addStudentBtn) {
+        addStudentBtn.onclick = async () => {
+          const id = document.getElementById('newStudentId').value.trim();
+          const name = document.getElementById('newStudentName').value.trim();
+          if (!id || !name) {
+            alert("請填寫座號與姓名！");
+            return;
+          }
+          await setDoc(doc(db, "students", id), { id, name });
+          document.getElementById('newStudentId').value = '';
+          document.getElementById('newStudentName').value = '';
+        };
       }
     });
 
-    document.getElementById('emailLoginBtn').onclick = () => {
-      const email = document.getElementById('loginEmail').value;
-      const pass = document.getElementById('loginPassword').value;
-      signInWithEmailAndPassword(auth, email, pass).catch(err => {
-        document.getElementById('loginError').innerText = "登入失敗：" + err.message;
-      });
-    };
-
-    document.getElementById('googleLoginBtn').onclick = () => {
-      const provider = new GoogleAuthProvider();
-      signInWithPopup(auth, provider).catch(err => {
-        document.getElementById('loginError').innerText = "Google 登入失敗：" + err.message;
-      });
-    };
-
-    document.getElementById('logoutBtn').onclick = () => signOut(auth);
-
-    // 啟動即時監聽（只需建立一次，之後異動會秒速更新）
+    // 即時資料庫監聽器
     function initRealtimeListeners() {
       // 監聽學生名單
       onSnapshot(collection(db, "students"), (snapshot) => {
         currentStudents = [];
         const container = document.getElementById('studentListTags');
+        if (!container) return;
         container.innerHTML = '';
 
         snapshot.forEach(docSnap => currentStudents.push(docSnap.data()));
@@ -81,18 +120,6 @@
       });
     }
 
-    document.getElementById('addStudentBtn').onclick = async () => {
-      const id = document.getElementById('newStudentId').value.trim();
-      const name = document.getElementById('newStudentName').value.trim();
-      if (!id || !name) {
-        alert("請填寫座號與姓名！");
-        return;
-      }
-      await setDoc(doc(db, "students", id), { id, name });
-      document.getElementById('newStudentId').value = '';
-      document.getElementById('newStudentName').value = '';
-    };
-
     async function deleteStudent(id) {
       if (confirm(`確定要刪除座號 ${id} 的學生嗎？`)) {
         await deleteDoc(doc(db, "students", id));
@@ -102,6 +129,8 @@
     function renderMatrixTable() {
       const tableHeader = document.getElementById('tableHeader');
       const tableBody = document.getElementById('tableBody');
+      if (!tableHeader || !tableBody) return;
+
       tableHeader.innerHTML = '<th>座號</th><th>姓名</th>';
       tableBody.innerHTML = '';
 
