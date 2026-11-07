@@ -79,14 +79,8 @@
       </div>
     </div>
 
-    <!-- 頁腳處置聲明 -->
+    <!-- 清爽無聲明頁腳 -->
     <footer>
-      <p class="footer-notice">
-        【個人資料、影像安全與保存聲明】<br>
-        本系統所採集之照片與出席紀錄僅供國立臺灣藝術大學音樂學系管樂團內部點名與行政核對使用。<br>
-        所有影像資料皆受系統存取控制防護，嚴禁非授權存取、外流或作任何第三方用途。<br>
-        點名紀錄與照片將於學期結束或行政核對完成後進行定期清除與妥善保存處置。
-      </p>
       <p class="footer-copy">
         &copy; 國立臺灣藝術大學音樂學系管樂團 <span class="dev-code">Designed by Una Lin</span>
       </p>
@@ -253,76 +247,3 @@
         currentStudents.forEach(student => {
           const tr = document.createElement('tr');
           let rowHTML = `<td>${student.id}</td><td><b>${student.name}</b></td>`;
-
-          uniqueDates.forEach(date => {
-            const record = records.find(r => r.id === student.id && r.date === date);
-            if (record) {
-              totalPresent++;
-              dailyCounts[date]++;
-              rowHTML += `
-                <td class="status-ok">
-                  ${record.time}
-                  <a href="${record.photo}" target="_blank">
-                    <img src="${record.photo}" class="photo-thumb" title="點擊檢視照片">
-                  </a>
-                </td>
-              `;
-            } else {
-              rowHTML += `<td class="status-no">缺席</td>`;
-            }
-          });
-
-          tr.innerHTML = rowHTML;
-          tableBody.appendChild(tr);
-        });
-
-        renderCharts(totalPresent, Math.max(0, totalSlots - totalPresent), uniqueDates, dailyCounts);
-      } catch (err) {
-        console.error("載入出席資料失敗：", err);
-      }
-    }
-
-    function renderCharts(presentCount, absentCount, dates, dailyCounts) {
-      if (pieChartInstance) pieChartInstance.destroy();
-      if (barChartInstance) barChartInstance.destroy();
-
-      const ctxPie = document.getElementById('overallPieChart').getContext('2d');
-      pieChartInstance = new Chart(ctxPie, {
-        type: 'pie',
-        data: {
-          labels: ['出席', '缺席'],
-          datasets: [{
-            data: [presentCount, absentCount],
-            backgroundColor: ['#28a745', '#dc3545']
-          }]
-        }
-      });
-
-      const ctxBar = document.getElementById('dailyBarChart').getContext('2d');
-      barChartInstance = new Chart(ctxBar, {
-        type: 'bar',
-        data: {
-          labels: dates,
-          datasets: [{
-            label: '每日出席人數',
-            data: dates.map(d => dailyCounts[d]),
-            backgroundColor: '#007bff'
-          }]
-        },
-        options: {
-          scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-        }
-      });
-    }
-
-    function exportToExcel() {
-      const table = document.querySelector('table');
-      const clonedTable = table.cloneNode(true);
-      clonedTable.querySelectorAll('img').forEach(img => img.remove());
-      
-      const wb = XLSX.utils.table_to_book(clonedTable, { sheet: "點名紀錄總表" });
-      XLSX.writeFile(wb, `點名出席總表_${new Date().toISOString().split('T')[0]}.xlsx`);
-    }
-  </script>
-</body>
-</html>
