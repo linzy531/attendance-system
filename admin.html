@@ -8,35 +8,6 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
-    /* 頂部按鈕完美對齊 */
-    .admin-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    .top-nav-btn {
-      height: 38px;
-      padding: 0 16px;
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: 600;
-      border: none;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      text-decoration: none;
-      box-sizing: border-box;
-      line-height: 1;
-    }
-    
-    .btn-toggle-open { background-color: #28a745; color: white; }
-    .btn-toggle-close { background-color: #dc3545; color: white; }
-    .btn-home { background-color: #17a2b8; color: white; }
-    .btn-logout { background-color: #6c757d; color: white; }
-
-    /* 高風險處置卡片（按鈕併排） */
     .danger-card {
       background: #fff;
       border-radius: 12px;
@@ -53,6 +24,7 @@
     }
     .btn-purge {
       height: 38px;
+      line-height: 38px;
       background-color: #dc3545;
       color: white;
       padding: 0 18px;
@@ -61,8 +33,8 @@
       cursor: pointer;
       font-weight: 600;
       font-size: 14px;
-      display: inline-flex;
-      align-items: center;
+      display: inline-block;
+      vertical-align: middle;
     }
     .btn-purge:hover { background-color: #bd2130; }
 
@@ -77,7 +49,6 @@
     }
     .btn-del-single:hover { color: #a71d2a; font-weight: bold; }
 
-    /* 刪除歷史紀錄 Log Modal 彈窗樣式 */
     .log-modal-overlay {
       display: none;
       position: fixed;
@@ -132,7 +103,7 @@
 
     <!-- 後台內容區塊 -->
     <div id="adminContent" style="display: none;">
-      <!-- 頂部按鈕齊平導覽列 -->
+      <!-- 頂部按鈕完全齊平導覽列 -->
       <div class="admin-header">
         <h2>行政總台管理與出席表</h2>
         <div style="display: flex; align-items: center; gap: 10px;">
@@ -167,7 +138,7 @@
         <div id="studentListTags">名單載入中...</div>
       </div>
 
-      <!-- 高風險清理區塊 (併排設計) -->
+      <!-- 高風險清理區塊 -->
       <div class="danger-card">
         <h3 style="margin-top:0; margin-bottom: 12px; font-size: 16px; color: #dc3545;">高風險資料安全處置</h3>
         <div class="danger-actions">
@@ -293,7 +264,6 @@
       logoutBtn.onclick = () => signOut(auth);
     }
 
-    // 點名開關控制 (加入 merge: true 容錯機制)
     const toggleBtn = document.getElementById('toggleAttendanceBtn');
     async function checkSystemStatus() {
       try {
@@ -333,12 +303,11 @@
         } catch (err) {
           alert("無法更新狀態，請確認 Firebase Rules 權限設定！");
           console.error(err);
-          isSystemOpen = !isSystemOpen; // 復原狀態
+          isSystemOpen = !isSystemOpen;
         }
       };
     }
 
-    // Log Modal 控制邏輯
     const openLogModalBtn = document.getElementById('openLogModalBtn');
     const closeLogModalBtn = document.getElementById('closeLogModalBtn');
     const logModal = document.getElementById('logModal');
@@ -355,277 +324,4 @@
 
     const addStudentBtn = document.getElementById('addStudentBtn');
     if (addStudentBtn) {
-      addStudentBtn.onclick = async () => {
-        const id = document.getElementById('newStudentId').value.trim();
-        const name = document.getElementById('newStudentName').value.trim();
-        if (!id || !name) {
-          alert("請填寫學號與姓名！");
-          return;
-        }
-        try {
-          await setDoc(doc(db, "students", id), { id, name });
-          document.getElementById('newStudentId').value = '';
-          document.getElementById('newStudentName').value = '';
-          loadAllData();
-        } catch (err) {
-          alert("新增失敗，請確認 Firebase 寫入權限！");
-          console.error(err);
-        }
-      };
-    }
-
-    const exportExcelBtn = document.getElementById('exportExcelBtn');
-    if (exportExcelBtn) {
-      exportExcelBtn.onclick = exportToExcel;
-    }
-
-    async function loadAllData() {
-      await checkSystemStatus();
-      await loadStudentManagement();
-      await loadAttendanceData();
-    }
-
-    async function logDeletionAction(details) {
-      try {
-        const now = new Date();
-        await addDoc(collection(db, "audit_logs"), {
-          operator: currentUserEmail,
-          timestamp: `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`,
-          details: details
-        });
-      } catch (err) {
-        console.warn("無法寫入刪除日誌：", err);
-      }
-    }
-
-    async function loadAuditLogs() {
-      const logListEl = document.getElementById('auditLogList');
-      if (!logListEl) return;
-      try {
-        const querySnapshot = await getDocs(collection(db, "audit_logs"));
-        const logs = [];
-        querySnapshot.forEach(docSnap => logs.push(docSnap.data()));
-        
-        if (logs.length === 0) {
-          logListEl.innerHTML = '<div class="log-item" style="color:#999;">目前尚無任何刪除操作紀錄。</div>';
-          return;
-        }
-
-        logs.reverse();
-        logListEl.innerHTML = logs.map(l => `
-          <div class="log-item">
-            <b>[${l.timestamp}]</b> 由 <span style="color:#0066cc;">${l.operator}</span> 執行 ➔ ${l.details}
-          </div>
-        `).join('');
-      } catch (err) {
-        logListEl.innerHTML = '<div class="log-item" style="color:#888;">尚未開啟日誌讀取權限或無紀錄。</div>';
-      }
-    }
-
-    async function loadStudentManagement() {
-      const container = document.getElementById('studentListTags');
-      try {
-        const querySnapshot = await getDocs(collection(db, "students"));
-        currentStudents = [];
-        if (!container) return;
-        container.innerHTML = '';
-
-        if (querySnapshot.empty) {
-          container.innerHTML = '<span style="color:#888;">目前尚無團員資料，請由上方輸入欄新增。</span>';
-          return;
-        }
-
-        querySnapshot.forEach(docSnap => {
-          currentStudents.push(docSnap.data());
-        });
-
-        currentStudents.sort((a, b) => a.id.localeCompare(b.id));
-
-        currentStudents.forEach(s => {
-          const tag = document.createElement('span');
-          tag.className = 'student-tag';
-          tag.innerHTML = `${s.id} ${s.name} `;
-          
-          const delBtn = document.createElement('button');
-          delBtn.textContent = '×';
-          delBtn.onclick = () => deleteStudent(s.id);
-          
-          tag.appendChild(delBtn);
-          container.appendChild(tag);
-        });
-      } catch (err) {
-        console.error("載入團員失敗：", err);
-        if (container) container.innerHTML = `<span style="color:red;">載入團員名單失敗，請確認 Rules 讀取權限。</span>`;
-      }
-    }
-
-    async function deleteStudent(id) {
-      if (confirm(`【確認】確定要刪除團員 ${id} 嗎？`)) {
-        try {
-          await deleteDoc(doc(db, "students", id));
-          await logDeletionAction(`刪除團員名單：${id}`);
-          loadAllData();
-        } catch (err) {
-          alert("刪除失敗！");
-          console.error(err);
-        }
-      }
-    }
-
-    async function loadAttendanceData() {
-      try {
-        const tableHeader = document.getElementById('tableHeader');
-        const tableBody = document.getElementById('tableBody');
-        if (!tableHeader || !tableBody) return;
-        
-        tableHeader.innerHTML = '<th>學號</th><th>姓名</th>';
-        tableBody.innerHTML = '';
-
-        const querySnapshot = await getDocs(collection(db, "attendance"));
-        allAttendanceRecords = [];
-        querySnapshot.forEach(docSnap => {
-          allAttendanceRecords.push({ docId: docSnap.id, ...docSnap.data() });
-        });
-
-        const uniqueDates = [...new Set(allAttendanceRecords.map(r => r.date))].sort();
-
-        if (uniqueDates.length === 0) {
-          uniqueDates.push(new Date().toISOString().split('T')[0]);
-        }
-
-        uniqueDates.forEach(date => {
-          const th = document.createElement('th');
-          th.textContent = date;
-          tableHeader.appendChild(th);
-        });
-
-        let totalPresent = 0;
-        let totalSlots = currentStudents.length * uniqueDates.length;
-        let dailyCounts = {};
-        uniqueDates.forEach(d => dailyCounts[d] = 0);
-
-        currentStudents.forEach(student => {
-          const tr = document.createElement('tr');
-          let rowHTML = `<td>${student.id}</td><td><b>${student.name}</b></td>`;
-
-          uniqueDates.forEach(date => {
-            const record = allAttendanceRecords.find(r => r.id === student.id && r.date === date);
-            if (record) {
-              totalPresent++;
-              dailyCounts[date]++;
-              rowHTML += `
-                <td class="status-ok">
-                  ${record.time}
-                  <a href="${record.photo}" target="_blank">
-                    <img src="${record.photo}" class="photo-thumb" title="點擊檢視照片">
-                  </a>
-                  <button class="btn-del-single" onclick="deleteSingleRecord('${record.docId}', '${student.name}', '${date}')" title="刪除此筆紀錄">🗑️</button>
-                </td>
-              `;
-            } else {
-              rowHTML += `<td class="status-no">缺席</td>`;
-            }
-          });
-
-          tr.innerHTML = rowHTML;
-          tableBody.appendChild(tr);
-        });
-
-        renderCharts(totalPresent, Math.max(0, totalSlots - totalPresent), uniqueDates, dailyCounts);
-      } catch (err) {
-        console.error("載入出席資料失敗：", err);
-      }
-    }
-
-    // 單筆紀錄清除
-    window.deleteSingleRecord = async function(docId, studentName, date) {
-      if (confirm(`【單筆清除】確定要刪除「${studentName}」在 ${date} 的點名紀錄嗎？`)) {
-        try {
-          await deleteDoc(doc(db, "attendance", docId));
-          await logDeletionAction(`刪除單筆紀錄 ➔ 團員：${studentName} / 日期：${date}`);
-          alert(`已成功刪除 ${studentName} (${date}) 的紀錄！`);
-          loadAllData();
-        } catch (err) {
-          alert("刪除單筆紀錄失敗，請檢查權限！");
-          console.error(err);
-        }
-      }
-    };
-
-    // 清空全體歷史紀錄（嚴謹驗證）
-    const deleteAllAttendanceBtn = document.getElementById('deleteAllAttendanceBtn');
-    if (deleteAllAttendanceBtn) {
-      deleteAllAttendanceBtn.onclick = async () => {
-        if (allAttendanceRecords.length === 0) {
-          alert("目前資料庫無任何出席紀錄可清空！");
-          return;
-        }
-
-        if (!confirm(`【高風險警告 1/3】您正準備「清空整個系統的所有歷史點名紀錄」！共 ${allAttendanceRecords.length} 筆。`)) return;
-        if (!confirm(`【高風險警告 2/3】這將會刪除所有日期的照片與點名矩陣！您真的確定嗎？`)) return;
-        
-        const userInput = prompt(`【最終驗證 3/3】此操作極其危險，請輸入大寫「DELETE」以確認執行清空：`);
-        if (userInput !== 'DELETE') {
-          alert("驗證文字不符，已安全取消刪除！");
-          return;
-        }
-
-        try {
-          const batch = writeBatch(db);
-          allAttendanceRecords.forEach(t => batch.delete(doc(db, "attendance", t.docId)));
-          await batch.commit();
-          await logDeletionAction(`全系統歷史點名紀錄清空 ➔ 共刪除 ${allAttendanceRecords.length} 筆歷史紀錄`);
-          alert("已成功清空所有歷史點名紀錄！");
-          loadAllData();
-        } catch (err) {
-          alert("清空失敗，請檢查權限！");
-          console.error(err);
-        }
-      };
-    }
-
-    function renderCharts(presentCount, absentCount, dates, dailyCounts) {
-      if (pieChartInstance) pieChartInstance.destroy();
-      if (barChartInstance) barChartInstance.destroy();
-
-      const ctxPie = document.getElementById('overallPieChart').getContext('2d');
-      pieChartInstance = new Chart(ctxPie, {
-        type: 'pie',
-        data: {
-          labels: ['出席', '缺席'],
-          datasets: [{
-            data: [presentCount, absentCount],
-            backgroundColor: ['#28a745', '#dc3545']
-          }]
-        }
-      });
-
-      const ctxBar = document.getElementById('dailyBarChart').getContext('2d');
-      barChartInstance = new Chart(ctxBar, {
-        type: 'bar',
-        data: {
-          labels: dates,
-          datasets: [{
-            label: '每日出席人數',
-            data: dates.map(d => dailyCounts[d]),
-            backgroundColor: '#007bff'
-          }]
-        },
-        options: {
-          scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-        }
-      });
-    }
-
-    function exportToExcel() {
-      const table = document.querySelector('table');
-      const clonedTable = table.cloneNode(true);
-      clonedTable.querySelectorAll('img').forEach(img => img.remove());
-      clonedTable.querySelectorAll('button').forEach(btn => btn.remove());
-      
-      const wb = XLSX.utils.table_to_book(clonedTable, { sheet: "點名紀錄總表" });
-      XLSX.writeFile(wb, `點名出席總表_${new Date().toISOString().split('T')[0]}.xlsx`);
-    }
-  </script>
-</body>
-</html>
+      addStudentBtn.
