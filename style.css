@@ -233,7 +233,7 @@ th {
   font-size: 14px;
 }
 
-/* 頁腳：居中且乾淨置底 */
+/* 頁腳置底 */
 footer {
   margin: 40px auto 20px auto;
   padding-top: 15px;
@@ -255,7 +255,7 @@ footer {
   font-weight: 500;
 }
 
-/* 彈窗 Modal 樣式 */
+/* 聲明 Modal 彈窗樣式 */
 .modal-overlay {
   display: none;
   position: fixed;
