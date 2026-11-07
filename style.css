@@ -227,7 +227,7 @@ th {
   background-color: #218838;
 }
 
-/* 頁腳置底 */
+/* 頁腳單行排版與署名縮小樣式 */
 footer {
   margin: 40px auto 20px auto;
   padding-top: 15px;
@@ -238,15 +238,17 @@ footer {
 }
 
 .footer-copy {
-  color: #a0aec0;
-  font-size: 11px;
+  color: #718096;
+  font-size: 12px;
+  font-weight: 500;
 }
 
-.dev-code {
-  font-size: 11px;
+.footer-dev {
+  font-size: 10px;
   color: #a0aec0;
   margin-left: 6px;
-  font-weight: 500;
+  font-weight: 400;
+  letter-spacing: 0.3px;
 }
 
 /* 前台個資 Modal 彈窗樣式 */
@@ -284,7 +286,7 @@ footer {
   background: #fafafa;
 }
 
-/* 頂部按鈕完美對齊（強效重置版） */
+/* 頂部導覽按鈕對齊強效修復 */
 .admin-header {
   display: flex;
   justify-content: space-between;
@@ -292,20 +294,27 @@ footer {
   margin-bottom: 20px;
 }
 
+.top-nav-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .top-nav-btn {
   height: 38px;
-  line-height: 38px;
   padding: 0 16px;
   border-radius: 6px;
   font-size: 14px;
   font-weight: 600;
   border: none;
   cursor: pointer;
-  display: inline-block;
-  vertical-align: middle;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   text-decoration: none;
   box-sizing: border-box;
-  margin: 0;
+  margin: 0 !important;
+  line-height: 1;
 }
 
 .btn-toggle-open { background-color: #28a745; color: white; }
