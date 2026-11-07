@@ -227,7 +227,7 @@ th {
   background-color: #218838;
 }
 
-/* 頁腳單行排版與署名縮小樣式 */
+/* 頁腳換行排版與署名縮小樣式 */
 footer {
   margin: 40px auto 20px auto;
   padding-top: 15px;
@@ -241,14 +241,15 @@ footer {
   color: #718096;
   font-size: 12px;
   font-weight: 500;
+  margin-bottom: 4px;
 }
 
 .footer-dev {
   font-size: 10px;
   color: #a0aec0;
-  margin-left: 6px;
+  letter-spacing: 0.5px;
   font-weight: 400;
-  letter-spacing: 0.3px;
+  display: block;
 }
 
 /* 前台個資 Modal 彈窗樣式 */
