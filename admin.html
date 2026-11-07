@@ -79,12 +79,13 @@
       </div>
     </div>
 
-    <!-- 清爽頁腳 -->
+    <!-- 頁腳處置聲明 -->
     <footer>
       <p class="footer-notice">
-        【個人資料與影像安全聲明】<br>
+        【個人資料、影像安全與保存聲明】<br>
         本系統所採集之照片與出席紀錄僅供國立臺灣藝術大學音樂學系管樂團內部點名與行政核對使用。<br>
-        所有影像資料皆受系統存取控制防護，嚴禁非授權存取、外流或作任何第三方用途。
+        所有影像資料皆受系統存取控制防護，嚴禁非授權存取、外流或作任何第三方用途。<br>
+        點名紀錄與照片將於學期結束或行政核對完成後進行定期清除與妥善保存處置。
       </p>
       <p class="footer-copy">
         &copy; 國立臺灣藝術大學音樂學系管樂團 <span class="dev-code">Designed by Una Lin</span>
@@ -113,7 +114,6 @@
     let pieChartInstance = null;
     let barChartInstance = null;
 
-    // 1. 監聽 Authentication 登入狀態變化
     onAuthStateChanged(auth, (user) => {
       const loginSection = document.getElementById('loginSection');
       const adminContent = document.getElementById('adminContent');
@@ -127,7 +127,6 @@
       }
     });
 
-    // 2. 直接綁定登入按鈕事件
     const emailLoginBtn = document.getElementById('emailLoginBtn');
     if (emailLoginBtn) {
       emailLoginBtn.onclick = () => {
