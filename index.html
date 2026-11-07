@@ -21,7 +21,16 @@
       <canvas id="canvas" style="display:none;"></canvas>
     </div>
 
-    <button id="captureBtn" onclick="takePhoto()">拍照並提交點名</button>
+    <!-- 隱私條款勾選區塊 -->
+    <div style="margin: 15px 0 20px 0; text-align: left; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #eee;">
+      <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; font-weight: normal; color: #555; cursor: pointer; margin: 0;">
+        <input type="checkbox" id="agreeCheckbox" style="margin-top: 2px; width: 16px; height: 16px; cursor: pointer;">
+        <span>我已閱讀並同意下方【個人資料、影像安全與保存聲明】，明白照片與紀錄僅供點名使用。</span>
+      </label>
+    </div>
+
+    <!-- 預設停用 (disabled)，勾選後解鎖 -->
+    <button id="captureBtn" onclick="takePhoto()" disabled style="opacity: 0.5; cursor: not-allowed;">拍照並提交點名</button>
     <p id="statusMsg"></p>
     
     <a href="admin.html">切換至行政點名矩陣總表</a>
