@@ -79,7 +79,7 @@
       </div>
     </div>
 
-    <!-- 清爽置中頁腳 -->
+    <!-- 清爽頁腳 -->
     <footer>
       <p class="footer-notice">
         【個人資料與影像安全聲明】<br>
@@ -87,7 +87,7 @@
         所有影像資料皆受系統存取控制防護，嚴禁非授權存取、外流或作任何第三方用途。
       </p>
       <p class="footer-copy">
-        &copy; 國立臺灣藝術大學音樂學系管樂團 <span class="dev-code">/* dev: Una Lin */</span>
+        &copy; 國立臺灣藝術大學音樂學系管樂團 <span class="dev-code">Designed by Una Lin</span>
       </p>
     </footer>
   </div>
@@ -113,69 +113,71 @@
     let pieChartInstance = null;
     let barChartInstance = null;
 
-    document.addEventListener('DOMContentLoaded', () => {
-      onAuthStateChanged(auth, (user) => {
-        const loginSection = document.getElementById('loginSection');
-        const adminContent = document.getElementById('adminContent');
-        if (user) {
-          if (loginSection) loginSection.style.display = 'none';
-          if (adminContent) adminContent.style.display = 'block';
-          loadAllData();
-        } else {
-          if (loginSection) loginSection.style.display = 'block';
-          if (adminContent) adminContent.style.display = 'none';
-        }
-      });
-
-      const emailLoginBtn = document.getElementById('emailLoginBtn');
-      if (emailLoginBtn) {
-        emailLoginBtn.onclick = () => {
-          const email = document.getElementById('loginEmail').value;
-          const pass = document.getElementById('loginPassword').value;
-          signInWithEmailAndPassword(auth, email, pass).catch(err => {
-            const errEl = document.getElementById('loginError');
-            if (errEl) errEl.innerText = "登入失敗：" + err.message;
-          });
-        };
-      }
-
-      const googleLoginBtn = document.getElementById('googleLoginBtn');
-      if (googleLoginBtn) {
-        googleLoginBtn.onclick = () => {
-          const provider = new GoogleAuthProvider();
-          signInWithPopup(auth, provider).catch(err => {
-            const errEl = document.getElementById('loginError');
-            if (errEl) errEl.innerText = "Google 登入失敗：" + err.message;
-          });
-        };
-      }
-
-      const logoutBtn = document.getElementById('logoutBtn');
-      if (logoutBtn) {
-        logoutBtn.onclick = () => signOut(auth);
-      }
-
-      const addStudentBtn = document.getElementById('addStudentBtn');
-      if (addStudentBtn) {
-        addStudentBtn.onclick = async () => {
-          const id = document.getElementById('newStudentId').value.trim();
-          const name = document.getElementById('newStudentName').value.trim();
-          if (!id || !name) {
-            alert("請填寫學號與姓名！");
-            return;
-          }
-          await setDoc(doc(db, "students", id), { id, name });
-          document.getElementById('newStudentId').value = '';
-          document.getElementById('newStudentName').value = '';
-          loadAllData();
-        };
-      }
-
-      const exportExcelBtn = document.getElementById('exportExcelBtn');
-      if (exportExcelBtn) {
-        exportExcelBtn.onclick = exportToExcel;
+    // 1. 監聽 Authentication 登入狀態變化
+    onAuthStateChanged(auth, (user) => {
+      const loginSection = document.getElementById('loginSection');
+      const adminContent = document.getElementById('adminContent');
+      if (user) {
+        if (loginSection) loginSection.style.display = 'none';
+        if (adminContent) adminContent.style.display = 'block';
+        loadAllData();
+      } else {
+        if (loginSection) loginSection.style.display = 'block';
+        if (adminContent) adminContent.style.display = 'none';
       }
     });
+
+    // 2. 直接綁定登入按鈕事件
+    const emailLoginBtn = document.getElementById('emailLoginBtn');
+    if (emailLoginBtn) {
+      emailLoginBtn.onclick = () => {
+        const email = document.getElementById('loginEmail').value;
+        const pass = document.getElementById('loginPassword').value;
+        signInWithEmailAndPassword(auth, email, pass).catch(err => {
+          console.error("登入錯誤：", err);
+          const errEl = document.getElementById('loginError');
+          if (errEl) errEl.innerText = "登入失敗：" + err.message;
+        });
+      };
+    }
+
+    const googleLoginBtn = document.getElementById('googleLoginBtn');
+    if (googleLoginBtn) {
+      googleLoginBtn.onclick = () => {
+        const provider = new GoogleAuthProvider();
+        signInWithPopup(auth, provider).catch(err => {
+          console.error("Google 登入錯誤：", err);
+          const errEl = document.getElementById('loginError');
+          if (errEl) errEl.innerText = "Google 登入失敗：" + err.message;
+        });
+      };
+    }
+
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+      logoutBtn.onclick = () => signOut(auth);
+    }
+
+    const addStudentBtn = document.getElementById('addStudentBtn');
+    if (addStudentBtn) {
+      addStudentBtn.onclick = async () => {
+        const id = document.getElementById('newStudentId').value.trim();
+        const name = document.getElementById('newStudentName').value.trim();
+        if (!id || !name) {
+          alert("請填寫學號與姓名！");
+          return;
+        }
+        await setDoc(doc(db, "students", id), { id, name });
+        document.getElementById('newStudentId').value = '';
+        document.getElementById('newStudentName').value = '';
+        loadAllData();
+      };
+    }
+
+    const exportExcelBtn = document.getElementById('exportExcelBtn');
+    if (exportExcelBtn) {
+      exportExcelBtn.onclick = exportToExcel;
+    }
 
     async function loadAllData() {
       await loadStudentManagement();
@@ -183,22 +185,145 @@
     }
 
     async function loadStudentManagement() {
-      const querySnapshot = await getDocs(collection(db, "students"));
-      currentStudents = [];
-      const container = document.getElementById('studentListTags');
-      if (!container) return;
-      container.innerHTML = '';
+      try {
+        const querySnapshot = await getDocs(collection(db, "students"));
+        currentStudents = [];
+        const container = document.getElementById('studentListTags');
+        if (!container) return;
+        container.innerHTML = '';
 
-      querySnapshot.forEach(docSnap => {
-        currentStudents.push(docSnap.data());
+        querySnapshot.forEach(docSnap => {
+          currentStudents.push(docSnap.data());
+        });
+
+        currentStudents.sort((a, b) => a.id.localeCompare(b.id));
+
+        currentStudents.forEach(s => {
+          const tag = document.createElement('span');
+          tag.className = 'student-tag';
+          tag.innerHTML = `${s.id} ${s.name} `;
+          
+          const delBtn = document.createElement('button');
+          delBtn.textContent = '×';
+          delBtn.onclick = () => deleteStudent(s.id);
+          
+          tag.appendChild(delBtn);
+          container.appendChild(tag);
+        });
+      } catch (err) {
+        console.error("載入團員失敗：", err);
+      }
+    }
+
+    async function deleteStudent(id) {
+      if (confirm(`確定要刪除學號 ${id} 的團員嗎？`)) {
+        await deleteDoc(doc(db, "students", id));
+        loadAllData();
+      }
+    }
+
+    async function loadAttendanceData() {
+      try {
+        const tableHeader = document.getElementById('tableHeader');
+        const tableBody = document.getElementById('tableBody');
+        if (!tableHeader || !tableBody) return;
+        
+        tableHeader.innerHTML = '<th>學號</th><th>姓名</th>';
+        tableBody.innerHTML = '';
+
+        const querySnapshot = await getDocs(collection(db, "attendance"));
+        const records = [];
+        querySnapshot.forEach(docSnap => records.push(docSnap.data()));
+
+        const uniqueDates = [...new Set(records.map(r => r.date))].sort();
+        if (uniqueDates.length === 0) {
+          uniqueDates.push(new Date().toISOString().split('T')[0]);
+        }
+
+        uniqueDates.forEach(date => {
+          const th = document.createElement('th');
+          th.textContent = date;
+          tableHeader.appendChild(th);
+        });
+
+        let totalPresent = 0;
+        let totalSlots = currentStudents.length * uniqueDates.length;
+        let dailyCounts = {};
+        uniqueDates.forEach(d => dailyCounts[d] = 0);
+
+        currentStudents.forEach(student => {
+          const tr = document.createElement('tr');
+          let rowHTML = `<td>${student.id}</td><td><b>${student.name}</b></td>`;
+
+          uniqueDates.forEach(date => {
+            const record = records.find(r => r.id === student.id && r.date === date);
+            if (record) {
+              totalPresent++;
+              dailyCounts[date]++;
+              rowHTML += `
+                <td class="status-ok">
+                  ${record.time}
+                  <a href="${record.photo}" target="_blank">
+                    <img src="${record.photo}" class="photo-thumb" title="點擊檢視照片">
+                  </a>
+                </td>
+              `;
+            } else {
+              rowHTML += `<td class="status-no">缺席</td>`;
+            }
+          });
+
+          tr.innerHTML = rowHTML;
+          tableBody.appendChild(tr);
+        });
+
+        renderCharts(totalPresent, Math.max(0, totalSlots - totalPresent), uniqueDates, dailyCounts);
+      } catch (err) {
+        console.error("載入出席資料失敗：", err);
+      }
+    }
+
+    function renderCharts(presentCount, absentCount, dates, dailyCounts) {
+      if (pieChartInstance) pieChartInstance.destroy();
+      if (barChartInstance) barChartInstance.destroy();
+
+      const ctxPie = document.getElementById('overallPieChart').getContext('2d');
+      pieChartInstance = new Chart(ctxPie, {
+        type: 'pie',
+        data: {
+          labels: ['出席', '缺席'],
+          datasets: [{
+            data: [presentCount, absentCount],
+            backgroundColor: ['#28a745', '#dc3545']
+          }]
+        }
       });
 
-      currentStudents.sort((a, b) => a.id.localeCompare(b.id));
+      const ctxBar = document.getElementById('dailyBarChart').getContext('2d');
+      barChartInstance = new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+          labels: dates,
+          datasets: [{
+            label: '每日出席人數',
+            data: dates.map(d => dailyCounts[d]),
+            backgroundColor: '#007bff'
+          }]
+        },
+        options: {
+          scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+      });
+    }
 
-      currentStudents.forEach(s => {
-        const tag = document.createElement('span');
-        tag.className = 'student-tag';
-        tag.innerHTML = `${s.id} ${s.name} `;
-        
-        const delBtn = document.createElement('button');
-        delBtn.
+    function exportToExcel() {
+      const table = document.querySelector('table');
+      const clonedTable = table.cloneNode(true);
+      clonedTable.querySelectorAll('img').forEach(img => img.remove());
+      
+      const wb = XLSX.utils.table_to_book(clonedTable, { sheet: "點名紀錄總表" });
+      XLSX.writeFile(wb, `點名出席總表_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }
+  </script>
+</body>
+</html>
