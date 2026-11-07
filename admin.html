@@ -8,7 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
-    /* 頂部導覽按鈕對齊（強效修復） */
+    /* 頂部對齊導覽列 */
     .admin-header {
       display: flex;
       justify-content: space-between;
@@ -42,7 +42,7 @@
     .btn-home { background-color: #17a2b8; color: white; }
     .btn-logout { background-color: #6c757d; color: white; }
 
-    /* 高風險區塊 */
+    /* 高風險資料處置區塊 */
     .danger-card {
       background: #fff;
       border-radius: 12px;
@@ -83,7 +83,7 @@
     }
     .btn-del-single:hover { color: #a71d2a; font-weight: bold; }
 
-    /* 彈窗 Log 樣式 */
+    /* 刪除歷史紀錄 Log 彈窗樣式 */
     .log-modal-overlay {
       display: none;
       position: fixed;
@@ -138,7 +138,7 @@
 
     <!-- 後台內容區塊 -->
     <div id="adminContent" style="display: none;">
-      <!-- 頂部對齊導覽列 -->
+      <!-- 頂部按鈕齊平導覽列 -->
       <div class="admin-header">
         <h2>行政總台管理與出席表</h2>
         <div class="top-nav-group">
@@ -162,7 +162,7 @@
         </div>
       </div>
 
-      <!-- 團員名單編輯 -->
+      <!-- 團員編輯 -->
       <div class="management-card">
         <h3 style="margin-top:0; margin-bottom: 15px;">樂團團員名單編輯</h3>
         <div class="form-inline">
@@ -173,12 +173,12 @@
         <div id="studentListTags">名單載入中...</div>
       </div>
 
-      <!-- 高風險清理區塊 (併排) -->
+      <!-- 高風險清理區塊 -->
       <div class="danger-card">
         <h3 style="margin-top:0; margin-bottom: 12px; font-size: 16px; color: #dc3545;">高風險資料安全處置</h3>
         <div class="danger-actions">
           <button id="deleteAllAttendanceBtn" class="btn-purge">清空全體歷史點名紀錄</button>
-          <button id="openLogModalBtn" class="top-nav-btn btn-logout" style="background-color: #4a5568;">檢視刪除歷史紀錄</button>
+          <button id="openLogModalBtn" class="top-nav-btn btn-logout" style="background-color: #4a5568;">📜 檢視刪除歷史紀錄 Log</button>
         </div>
       </div>
 
@@ -205,7 +205,7 @@
       </div>
     </div>
 
-    <!-- 頁腳 -->
+    <!-- 頁腳 (無聲明) -->
     <footer>
       <p class="footer-copy">
         &copy; 國立臺灣藝術大學音樂學系管樂團 <span class="dev-code">Designed by Una Lin</span>
@@ -251,7 +251,7 @@
     let barChartInstance = null;
     let isSystemOpen = true;
 
-    // 登入狀態監聽與安全切換
+    // 登入狀態監聽
     onAuthStateChanged(auth, (user) => {
       const loginSection = document.getElementById('loginSection');
       const adminContent = document.getElementById('adminContent');
@@ -266,7 +266,7 @@
       }
     });
 
-    // Email 登入按鈕綁定（加入 preventDefault 防刷）
+    // Email 登入按鈕綁定
     const emailLoginBtn = document.getElementById('emailLoginBtn');
     if (emailLoginBtn) {
       emailLoginBtn.addEventListener('click', async (e) => {
@@ -314,7 +314,7 @@
       logoutBtn.onclick = () => signOut(auth);
     }
 
-    // 開關控制邏輯 (merge: true 防護)
+    // 點名系統開放 / 鎖定切換開關
     const toggleBtn = document.getElementById('toggleAttendanceBtn');
     async function checkSystemStatus() {
       try {
@@ -359,7 +359,7 @@
       };
     }
 
-    // Modal 彈窗
+    // Audit Log Modal 控制
     const openLogModalBtn = document.getElementById('openLogModalBtn');
     const closeLogModalBtn = document.getElementById('closeLogModalBtn');
     const logModal = document.getElementById('logModal');
@@ -493,6 +493,7 @@
       }
     }
 
+    // 載入出席資料（只有至少有一人點名後，才會顯示該日期與缺席欄位）
     async function loadAttendanceData() {
       try {
         const tableHeader = document.getElementById('tableHeader');
@@ -508,20 +509,20 @@
           allAttendanceRecords.push({ docId: docSnap.id, ...docSnap.data() });
         });
 
+        // 取得所有有發生點名紀錄的不重複日期
         const uniqueDates = [...new Set(allAttendanceRecords.map(r => r.date))].sort();
 
-        if (uniqueDates.length === 0) {
-          uniqueDates.push(new Date().toISOString().split('T')[0]);
+        // 只有有發生點名時，才動態生成日期標頭
+        if (uniqueDates.length > 0) {
+          uniqueDates.forEach(date => {
+            const th = document.createElement('th');
+            th.textContent = date;
+            tableHeader.appendChild(th);
+          });
         }
 
-        uniqueDates.forEach(date => {
-          const th = document.createElement('th');
-          th.textContent = date;
-          tableHeader.appendChild(th);
-        });
-
         let totalPresent = 0;
-        let totalSlots = currentStudents.length * uniqueDates.length;
+        let totalSlots = uniqueDates.length > 0 ? currentStudents.length * uniqueDates.length : 0;
         let dailyCounts = {};
         uniqueDates.forEach(d => dailyCounts[d] = 0);
 
@@ -529,24 +530,27 @@
           const tr = document.createElement('tr');
           let rowHTML = `<td>${student.id}</td><td><b>${student.name}</b></td>`;
 
-          uniqueDates.forEach(date => {
-            const record = allAttendanceRecords.find(r => r.id === student.id && r.date === date);
-            if (record) {
-              totalPresent++;
-              dailyCounts[date]++;
-              rowHTML += `
-                <td class="status-ok">
-                  ${record.time}
-                  <a href="${record.photo}" target="_blank">
-                    <img src="${record.photo}" class="photo-thumb" title="點擊檢視照片">
-                  </a>
-                  <button class="btn-del-single" onclick="deleteSingleRecord('${record.docId}', '${student.name}', '${date}')" title="刪除此筆紀錄">🗑️</button>
-                </td>
-              `;
-            } else {
-              rowHTML += `<td class="status-no">缺席</td>`;
-            }
-          });
+          // 只有當至少有一筆點名紀錄時，才渲染日期欄位與缺席狀態
+          if (uniqueDates.length > 0) {
+            uniqueDates.forEach(date => {
+              const record = allAttendanceRecords.find(r => r.id === student.id && r.date === date);
+              if (record) {
+                totalPresent++;
+                dailyCounts[date]++;
+                rowHTML += `
+                  <td class="status-ok">
+                    ${record.time}
+                    <a href="${record.photo}" target="_blank">
+                      <img src="${record.photo}" class="photo-thumb" title="點擊檢視照片">
+                    </a>
+                    <button class="btn-del-single" onclick="deleteSingleRecord('${record.docId}', '${student.name}', '${date}')" title="刪除此筆紀錄">🗑️</button>
+                  </td>
+                `;
+              } else {
+                rowHTML += `<td class="status-no">缺席</td>`;
+              }
+            });
+          }
 
           tr.innerHTML = rowHTML;
           tableBody.appendChild(tr);
@@ -558,6 +562,7 @@
       }
     }
 
+    // 單筆紀錄刪除
     window.deleteSingleRecord = async function(docId, studentName, date) {
       if (confirm(`【單筆清除】確定要刪除「${studentName}」在 ${date} 的點名紀錄嗎？`)) {
         try {
@@ -572,6 +577,7 @@
       }
     };
 
+    // 清空全體歷史點名紀錄
     const deleteAllAttendanceBtn = document.getElementById('deleteAllAttendanceBtn');
     if (deleteAllAttendanceBtn) {
       deleteAllAttendanceBtn.onclick = async () => {
@@ -623,10 +629,10 @@
       barChartInstance = new Chart(ctxBar, {
         type: 'bar',
         data: {
-          labels: dates,
+          labels: dates.length > 0 ? dates : [new Date().toISOString().split('T')[0]],
           datasets: [{
             label: '每日出席人數',
-            data: dates.map(d => dailyCounts[d]),
+            data: dates.length > 0 ? dates.map(d => dailyCounts[d]) : [0],
             backgroundColor: '#007bff'
           }]
         },
