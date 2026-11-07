@@ -8,41 +8,6 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
-    /* 頂部對齊導覽列 */
-    .admin-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    .top-nav-group {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .top-nav-btn {
-      height: 38px;
-      padding: 0 16px;
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: 600;
-      border: none;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      text-decoration: none;
-      box-sizing: border-box;
-      margin: 0 !important;
-      line-height: 1;
-    }
-    
-    .btn-toggle-open { background-color: #28a745; color: white; }
-    .btn-toggle-close { background-color: #dc3545; color: white; }
-    .btn-home { background-color: #17a2b8; color: white; }
-    .btn-logout { background-color: #6c757d; color: white; }
-
-    /* 高風險資料處置區塊 */
     .danger-card {
       background: #fff;
       border-radius: 12px;
@@ -83,7 +48,6 @@
     }
     .btn-del-single:hover { color: #a71d2a; font-weight: bold; }
 
-    /* 刪除歷史紀錄 Log 彈窗樣式 */
     .log-modal-overlay {
       display: none;
       position: fixed;
@@ -138,7 +102,7 @@
 
     <!-- 後台內容區塊 -->
     <div id="adminContent" style="display: none;">
-      <!-- 頂部按鈕齊平導覽列 -->
+      <!-- 頂部對齊導覽列 -->
       <div class="admin-header">
         <h2>行政總台管理與出席表</h2>
         <div class="top-nav-group">
@@ -178,7 +142,7 @@
         <h3 style="margin-top:0; margin-bottom: 12px; font-size: 16px; color: #dc3545;">高風險資料安全處置</h3>
         <div class="danger-actions">
           <button id="deleteAllAttendanceBtn" class="btn-purge">清空全體歷史點名紀錄</button>
-          <button id="openLogModalBtn" class="top-nav-btn btn-logout" style="background-color: #4a5568;">檢視刪除歷史紀錄 </button>
+          <button id="openLogModalBtn" class="top-nav-btn btn-logout" style="background-color: #4a5568;">📜 檢視刪除歷史紀錄 Log</button>
         </div>
       </div>
 
@@ -205,10 +169,10 @@
       </div>
     </div>
 
-    <!-- 頁腳 (無聲明) -->
+    <!-- 頁腳 -->
     <footer>
       <p class="footer-copy">
-        &copy; 國立臺灣藝術大學音樂學系管樂團 <span class="dev-code">Designed by Una Lin</span>
+        &copy; 國立臺灣藝術大學音樂學系管樂團 <span class="footer-dev">Designed by Una Lin</span>
       </p>
     </footer>
   </div>
@@ -314,7 +278,7 @@
       logoutBtn.onclick = () => signOut(auth);
     }
 
-    // 點名系統開放 / 鎖定切換開關
+    // 點名開關控制
     const toggleBtn = document.getElementById('toggleAttendanceBtn');
     async function checkSystemStatus() {
       try {
@@ -509,10 +473,8 @@
           allAttendanceRecords.push({ docId: docSnap.id, ...docSnap.data() });
         });
 
-        // 取得所有有發生點名紀錄的不重複日期
         const uniqueDates = [...new Set(allAttendanceRecords.map(r => r.date))].sort();
 
-        // 只有有發生點名時，才動態生成日期標頭
         if (uniqueDates.length > 0) {
           uniqueDates.forEach(date => {
             const th = document.createElement('th');
@@ -530,7 +492,6 @@
           const tr = document.createElement('tr');
           let rowHTML = `<td>${student.id}</td><td><b>${student.name}</b></td>`;
 
-          // 只有當至少有一筆點名紀錄時，才渲染日期欄位與缺席狀態
           if (uniqueDates.length > 0) {
             uniqueDates.forEach(date => {
               const record = allAttendanceRecords.find(r => r.id === student.id && r.date === date);
