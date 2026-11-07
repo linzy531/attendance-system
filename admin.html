@@ -8,7 +8,6 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
-    /* 細項刪除按鈕與日誌樣式 */
     .btn-del-single {
       background: none;
       border: none;
@@ -22,11 +21,51 @@
       color: #a71d2a;
       font-weight: bold;
     }
+    .action-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .action-btn-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .btn-secondary {
+      background-color: #6c757d;
+      color: white;
+      padding: 9px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .btn-secondary:hover {
+      background-color: #5a6268;
+    }
+    .btn-danger-purge {
+      background-color: #dc3545;
+      color: white;
+      padding: 9px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .btn-danger-purge:hover {
+      background-color: #bd2130;
+    }
     .log-card {
+      display: none;
       background: #fff;
       border-radius: 12px;
       padding: 20px;
-      margin-top: 25px;
+      margin-top: 20px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.03);
     }
     .log-list {
@@ -100,25 +139,14 @@
         <div id="studentListTags">名單載入中...</div>
       </div>
 
-      <!-- 高風險整批刪除管理區塊 -->
-      <div class="danger-zone">
-        <h3>整批點名紀錄清除管理（高風險操作）</h3>
-        <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-          <div>
-            <label style="display:inline-block; font-size: 13px; font-weight: normal; margin-bottom: 4px;">選擇欲清除的特定日期：</label>
-            <select id="deleteDateSelect" style="width: 180px; padding: 8px; margin-bottom: 0;">
-              <option value="">-- 無歷史紀錄 --</option>
-            </select>
-          </div>
-          <button id="deleteSingleDateBtn" class="btn-danger" style="margin-top: 18px;">刪除指定日期全體紀錄</button>
-          <button id="deleteAllAttendanceBtn" class="btn-danger" style="margin-top: 18px; background-color: #9b2c2c;">清空全部歷史紀錄</button>
+      <!-- 出席總表與工具控制列 -->
+      <div class="action-bar">
+        <h3 style="margin: 0;">出席紀錄總表</h3>
+        <div class="action-btn-group">
+          <button id="toggleLogBtn" class="btn-secondary">檢視刪除紀錄 Log</button>
+          <button id="exportExcelBtn" class="export-btn">匯出 Excel 報表</button>
+          <button id="deleteAllAttendanceBtn" class="btn-danger-purge">清空全體歷史紀錄</button>
         </div>
-      </div>
-
-      <!-- 出席總表與匯出 -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <h3 style="margin: 0;">出席紀錄總表 <span style="font-size:12px; font-weight:normal; color:#666;">（可直接點擊表格內 🗑️ 按鈕刪除單筆紀錄）</span></h3>
-        <button id="exportExcelBtn" class="export-btn">匯出 Excel 報表</button>
       </div>
 
       <div class="table-wrapper">
@@ -133,8 +161,8 @@
         </table>
       </div>
 
-      <!-- 刪除操作稽核日誌 (Audit Log) -->
-      <div class="log-card">
+      <!-- 抽屜式：刪除操作稽核日誌 -->
+      <div class="log-card" id="logCardSection">
         <h3 style="margin-top:0; margin-bottom: 10px; font-size: 15px; color: #444;">📋 刪除操作歷史紀錄 log</h3>
         <div class="log-list" id="auditLogList">載入日誌中...</div>
       </div>
@@ -172,7 +200,7 @@
       writeBatch
     } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
-    let currentUserEmail = "未知管理員";
+    let currentUserEmail = "行政管理員";
     let currentStudents = [];
     let allAttendanceRecords = [];
     let pieChartInstance = null;
@@ -198,9 +226,11 @@
       emailLoginBtn.onclick = () => {
         const email = document.getElementById('loginEmail').value;
         const pass = document.getElementById('loginPassword').value;
+        const errEl = document.getElementById('loginError');
+        if (errEl) errEl.innerText = "";
+        
         signInWithEmailAndPassword(auth, email, pass).catch(err => {
           console.error("登入錯誤：", err);
-          const errEl = document.getElementById('loginError');
           if (errEl) errEl.innerText = "登入失敗：" + err.message;
         });
       };
@@ -210,9 +240,11 @@
     if (googleLoginBtn) {
       googleLoginBtn.onclick = () => {
         const provider = new GoogleAuthProvider();
+        const errEl = document.getElementById('loginError');
+        if (errEl) errEl.innerText = "";
+
         signInWithPopup(auth, provider).catch(err => {
           console.error("Google 登入錯誤：", err);
-          const errEl = document.getElementById('loginError');
           if (errEl) errEl.innerText = "Google 登入失敗：" + err.message;
         });
       };
@@ -223,7 +255,6 @@
       logoutBtn.onclick = () => signOut(auth);
     }
 
-    // 點名開關控制
     const toggleBtn = document.getElementById('toggleAttendanceBtn');
     async function checkSystemStatus() {
       try {
@@ -235,7 +266,7 @@
           isSystemOpen = true;
         }
       } catch (err) {
-        console.warn("無權限存取系統設定，預設開放：", err);
+        console.warn("無法取得系統設定，預設開放：", err);
         isSystemOpen = true;
       }
       updateToggleUI();
@@ -267,6 +298,22 @@
       };
     }
 
+    // 控制 Log 區塊展開/收合
+    const toggleLogBtn = document.getElementById('toggleLogBtn');
+    const logCardSection = document.getElementById('logCardSection');
+    if (toggleLogBtn && logCardSection) {
+      toggleLogBtn.onclick = () => {
+        if (logCardSection.style.display === 'block') {
+          logCardSection.style.display = 'none';
+          toggleLogBtn.innerText = "檢視刪除紀錄 Log";
+        } else {
+          logCardSection.style.display = 'block';
+          toggleLogBtn.innerText = "隱藏刪除紀錄 Log";
+          loadAuditLogs();
+        }
+      };
+    }
+
     const addStudentBtn = document.getElementById('addStudentBtn');
     if (addStudentBtn) {
       addStudentBtn.onclick = async () => {
@@ -282,7 +329,7 @@
           document.getElementById('newStudentName').value = '';
           loadAllData();
         } catch (err) {
-          alert("新增失敗，請確認 Firebase Rules 寫入權限！");
+          alert("新增失敗，請確認 Firebase 寫入權限！");
           console.error(err);
         }
       };
@@ -297,10 +344,8 @@
       await checkSystemStatus();
       await loadStudentManagement();
       await loadAttendanceData();
-      await loadAuditLogs();
     }
 
-    // 寫入刪除操作日誌
     async function logDeletionAction(details) {
       try {
         const now = new Date();
@@ -310,11 +355,10 @@
           details: details
         });
       } catch (err) {
-        console.error("日誌寫入失敗：", err);
+        console.warn("無法寫入刪除日誌（請確認 Rules 權限）：", err);
       }
     }
 
-    // 載入日誌清單
     async function loadAuditLogs() {
       const logListEl = document.getElementById('auditLogList');
       if (!logListEl) return;
@@ -328,7 +372,6 @@
           return;
         }
 
-        // 照時間倒序排列
         logs.reverse();
         logListEl.innerHTML = logs.map(l => `
           <div class="log-item">
@@ -336,7 +379,7 @@
           </div>
         `).join('');
       } catch (err) {
-        logListEl.innerHTML = '<div class="log-item" style="color:red;">無法載入日誌紀錄。</div>';
+        logListEl.innerHTML = '<div class="log-item" style="color:#888;">尚未開啟日誌讀取權限或無紀錄。</div>';
       }
     }
 
@@ -373,7 +416,7 @@
         });
       } catch (err) {
         console.error("載入團員失敗：", err);
-        if (container) container.innerHTML = `<span style="color:red;">載入失敗（權限不足）：請檢查 Firebase Rules。</span>`;
+        if (container) container.innerHTML = `<span style="color:red;">載入團員名單失敗，請確認 Rules 讀取權限。</span>`;
       }
     }
 
@@ -381,7 +424,7 @@
       if (confirm(`【確認】確定要刪除團員 ${id} 嗎？`)) {
         try {
           await deleteDoc(doc(db, "students", id));
-          await logDeletionAction(`刪除團員資料：${id}`);
+          await logDeletionAction(`刪除團員名單：${id}`);
           loadAllData();
         } catch (err) {
           alert("刪除失敗！");
@@ -394,7 +437,6 @@
       try {
         const tableHeader = document.getElementById('tableHeader');
         const tableBody = document.getElementById('tableBody');
-        const deleteDateSelect = document.getElementById('deleteDateSelect');
         if (!tableHeader || !tableBody) return;
         
         tableHeader.innerHTML = '<th>學號</th><th>姓名</th>';
@@ -407,20 +449,6 @@
         });
 
         const uniqueDates = [...new Set(allAttendanceRecords.map(r => r.date))].sort();
-        
-        if (deleteDateSelect) {
-          deleteDateSelect.innerHTML = '';
-          if (uniqueDates.length === 0) {
-            deleteDateSelect.innerHTML = '<option value="">-- 無歷史紀錄 --</option>';
-          } else {
-            uniqueDates.forEach(d => {
-              const opt = document.createElement('option');
-              opt.value = d;
-              opt.textContent = d;
-              deleteDateSelect.appendChild(opt);
-            });
-          }
-        }
 
         if (uniqueDates.length === 0) {
           uniqueDates.push(new Date().toISOString().split('T')[0]);
@@ -452,7 +480,7 @@
                   <a href="${record.photo}" target="_blank">
                     <img src="${record.photo}" class="photo-thumb" title="點擊檢視照片">
                   </a>
-                  <button class="btn-del-single" onclick="deleteSingleRecord('${record.docId}', '${student.name}', '${date}')" title="刪除此筆點名紀錄">🗑️</button>
+                  <button class="btn-del-single" onclick="deleteSingleRecord('${record.docId}', '${student.name}', '${date}')" title="刪除此筆紀錄">🗑️</button>
                 </td>
               `;
             } else {
@@ -470,14 +498,15 @@
       }
     }
 
-    // 全域暴露：刪除單筆紀錄
+    // 單筆紀錄清除
     window.deleteSingleRecord = async function(docId, studentName, date) {
-      if (confirm(`【單筆細項刪除】確定要刪除「${studentName}」在 ${date} 的點名紀錄嗎？`)) {
+      if (confirm(`【單筆清除】確定要刪除「${studentName}」在 ${date} 的點名紀錄嗎？`)) {
         try {
           await deleteDoc(doc(db, "attendance", docId));
-          await logDeletionAction(`刪除單筆點名紀錄 ➔ 姓名：${studentName} / 日期：${date} / ID：${docId}`);
+          await logDeletionAction(`刪除單筆紀錄 ➔ 團員：${studentName} / 日期：${date}`);
           alert(`已成功刪除 ${studentName} (${date}) 的紀錄！`);
           loadAllData();
+          if (logCardSection.style.display === 'block') loadAuditLogs();
         } catch (err) {
           alert("刪除單筆紀錄失敗，請檢查權限！");
           console.error(err);
@@ -485,45 +514,7 @@
       }
     };
 
-    // 刪除特定單日點名紀錄
-    const deleteSingleDateBtn = document.getElementById('deleteSingleDateBtn');
-    if (deleteSingleDateBtn) {
-      deleteSingleDateBtn.onclick = async () => {
-        const targetDate = document.getElementById('deleteDateSelect').value;
-        if (!targetDate) {
-          alert("請先選擇欲刪除的日期！");
-          return;
-        }
-
-        const targets = allAttendanceRecords.filter(r => r.date === targetDate);
-        if (targets.length === 0) {
-          alert(`日期 ${targetDate} 無任何點名紀錄！`);
-          return;
-        }
-
-        if (!confirm(`【警告 1/3】確定要刪除 ${targetDate} 的所有點名紀錄嗎？（共 ${targets.length} 筆紀錄）`)) return;
-        if (!confirm(`【警告 2/3】刪除後照片與紀錄將永久移除無法復原！是否繼續？`)) return;
-        const userInput = prompt(`【最終確認 3/3】請在此輸入此日期「${targetDate}」以核准刪除指令：`);
-        if (userInput !== targetDate) {
-          alert("輸入日期不符，已取消刪除操作！");
-          return;
-        }
-
-        try {
-          const batch = writeBatch(db);
-          targets.forEach(t => batch.delete(doc(db, "attendance", t.docId)));
-          await batch.commit();
-          await logDeletionAction(`整批刪除指定日期點名紀錄 ➔ 日期：${targetDate}（共 ${targets.length} 筆）`);
-          alert(`成功清空 ${targetDate} 的所有點名紀錄！`);
-          loadAllData();
-        } catch (err) {
-          alert("刪除失敗，請檢查權限！");
-          console.error(err);
-        }
-      };
-    }
-
-    // 清空全體歷史點名紀錄
+    // 清空全體歷史紀錄（嚴謹驗證）
     const deleteAllAttendanceBtn = document.getElementById('deleteAllAttendanceBtn');
     if (deleteAllAttendanceBtn) {
       deleteAllAttendanceBtn.onclick = async () => {
@@ -534,6 +525,7 @@
 
         if (!confirm(`【高風險警告 1/3】您正準備「清空整個系統的所有歷史點名紀錄」！共 ${allAttendanceRecords.length} 筆。`)) return;
         if (!confirm(`【高風險警告 2/3】這將會刪除所有日期的照片與點名矩陣！您真的確定嗎？`)) return;
+        
         const userInput = prompt(`【最終驗證 3/3】此操作極其危險，請輸入大寫「DELETE」以確認執行清空：`);
         if (userInput !== 'DELETE') {
           alert("驗證文字不符，已安全取消刪除！");
@@ -547,6 +539,7 @@
           await logDeletionAction(`全系統歷史點名紀錄清空 ➔ 共刪除 ${allAttendanceRecords.length} 筆歷史紀錄`);
           alert("已成功清空所有歷史點名紀錄！");
           loadAllData();
+          if (logCardSection.style.display === 'block') loadAuditLogs();
         } catch (err) {
           alert("清空失敗，請檢查權限！");
           console.error(err);
