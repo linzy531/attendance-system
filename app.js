@@ -1,6 +1,6 @@
 // app.js
 import { db } from "./firebase-config.js";
-import { collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+import { collection, getDocs, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
 const video = document.getElementById('webcam');
 const studentSelect = document.getElementById('studentSelect');
@@ -13,6 +13,7 @@ const confirmAgreeBtn = document.getElementById('confirmAgreeBtn');
 
 let todayDateStr = "";
 let studentList = [];
+let isSystemOpen = true;
 
 window.onload = async () => {
   const now = new Date();
@@ -20,23 +21,27 @@ window.onload = async () => {
   const dateDisplay = document.getElementById('todayDateDisplay');
   if (dateDisplay) dateDisplay.innerText = `點名日期：${todayDateStr}`;
 
-  // 1. 彈窗控制邏輯
+  // 1. 彈窗閱讀與同意邏輯
   if (openModalBtn && termsModal && confirmAgreeBtn) {
-    // 點擊連結開啟彈窗
     openModalBtn.onclick = () => {
       termsModal.style.display = 'flex';
     };
 
-    // 點擊「我已閱讀並同意條款」按鈕：自動打勾並解鎖拍照按鈕
     confirmAgreeBtn.onclick = () => {
       termsModal.style.display = 'none';
       agreeCheckbox.checked = true;
-      captureBtn.disabled = false;
-      captureBtn.style.opacity = "1";
-      captureBtn.style.cursor = "pointer";
+      if (isSystemOpen) {
+        captureBtn.disabled = false;
+        captureBtn.style.opacity = "1";
+        captureBtn.style.cursor = "pointer";
+      }
     };
   }
 
+  // 2. 檢查行政後台開關狀態
+  await checkSystemOpen();
+
+  // 3. 載入團員名單
   try {
     const querySnapshot = await getDocs(collection(db, "students"));
     studentSelect.innerHTML = '';
@@ -66,6 +71,29 @@ window.onload = async () => {
   startCamera();
 };
 
+async function checkSystemOpen() {
+  try {
+    const settingsRef = doc(db, "settings", "attendance");
+    const docSnap = await getDoc(settingsRef);
+    if (docSnap.exists()) {
+      isSystemOpen = docSnap.data().isOpen;
+    }
+  } catch (e) {
+    console.warn("無法取得點名開放狀態，預設開放", e);
+  }
+
+  const statusMsg = document.getElementById('statusMsg');
+  if (!isSystemOpen) {
+    captureBtn.disabled = true;
+    captureBtn.style.opacity = "0.5";
+    captureBtn.style.cursor = "not-allowed";
+    if (statusMsg) {
+      statusMsg.innerText = "目前非點名時間，系統已由行政後台關閉。";
+      statusMsg.style.color = "#dc3545";
+    }
+  }
+}
+
 async function startCamera() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -76,6 +104,11 @@ async function startCamera() {
 }
 
 window.takePhoto = async function() {
+  if (!isSystemOpen) {
+    alert("目前非點名時間，無法提交點名！");
+    return;
+  }
+
   if (!agreeCheckbox.checked) {
     alert("請先點擊連結閱讀並同意個資與安全聲明！");
     return;
