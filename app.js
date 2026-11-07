@@ -7,14 +7,15 @@ const studentSelect = document.getElementById('studentSelect');
 let todayDateStr = "";
 let studentList = [];
 
-window.onload = () => {
+document.addEventListener('DOMContentLoaded', () => {
   const now = new Date();
   todayDateStr = now.toISOString().split('T')[0];
   const dateDisplay = document.getElementById('todayDateDisplay');
   if (dateDisplay) dateDisplay.innerText = `點名日期：${todayDateStr}`;
 
-  // 使用 onSnapshot 即時監聽與快取名單
+  // 即時監聽與快取名單
   onSnapshot(collection(db, "students"), (snapshot) => {
+    if (!studentSelect) return;
     studentSelect.innerHTML = '';
     studentList = [];
 
@@ -37,35 +38,43 @@ window.onload = () => {
     });
   }, (err) => {
     console.error("即時同步名單失敗：", err);
-    studentSelect.innerHTML = '<option value="">名單載入失敗</option>';
+    if (studentSelect) studentSelect.innerHTML = '<option value="">名單載入失敗</option>';
   });
 
   startCamera();
-};
+
+  // 綁定拍照按鈕
+  const captureBtn = document.getElementById('captureBtn');
+  if (captureBtn) {
+    captureBtn.onclick = takePhoto;
+  }
+});
 
 async function startCamera() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    video.srcObject = stream;
+    if (video) video.srcObject = stream;
   } catch (err) {
     alert("無法存取攝影機，請確認已允許瀏覽器使用鏡頭權限。");
   }
 }
 
-window.takePhoto = async function() {
-  if (!studentSelect.value) {
+async function takePhoto() {
+  if (!studentSelect || !studentSelect.value) {
     alert("請先選擇姓名！");
     return;
   }
 
   const now = new Date();
   const canvas = document.getElementById('canvas');
+  if (!canvas || !video) return;
+
   canvas.width = video.videoWidth || 320;
   canvas.height = video.videoHeight || 240;
   const ctx = canvas.getContext('2d');
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-  const photoData = canvas.toDataURL('image/jpeg', 0.6); // 壓縮照片畫質減少儲存與傳輸延遲
+  const photoData = canvas.toDataURL('image/jpeg', 0.6);
   const selectedStudent = studentList.find(s => s.id === studentSelect.value);
 
   const record = {
@@ -80,10 +89,12 @@ window.takePhoto = async function() {
     const docId = `${record.date}_${record.id}`;
     await setDoc(doc(db, "attendance", docId), record);
     const statusMsg = document.getElementById('statusMsg');
-    statusMsg.innerText = `✅ ${selectedStudent.name} 今日（${todayDateStr}）點名成功！`;
-    statusMsg.style.color = "green";
+    if (statusMsg) {
+      statusMsg.innerText = `✅ ${selectedStudent.name} 今日（${todayDateStr}）點名成功！`;
+      statusMsg.style.color = "green";
+    }
   } catch (err) {
     console.error("提交點名失敗：", err);
     alert("提交失敗，請檢查網路連線或資料庫權限。");
   }
-};
+}
