@@ -57,16 +57,6 @@ window.takePhoto = async function() {
     return;
   }
 
-  // 抓取打卡者的 IP 位置
-  let userIP = "無法取得";
-  try {
-    const ipRes = await fetch("https://api.ipify.org?format=json");
-    const ipData = await ipRes.json();
-    userIP = ipData.ip;
-  } catch (e) {
-    console.warn("取得 IP 失敗", e);
-  }
-
   const now = new Date();
   const canvas = document.getElementById('canvas');
   canvas.width = video.videoWidth || 320;
@@ -74,7 +64,7 @@ window.takePhoto = async function() {
   const ctx = canvas.getContext('2d');
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-  const photoData = canvas.toDataURL('image/jpeg', 0.6); // 壓縮品質
+  const photoData = canvas.toDataURL('image/jpeg', 0.6);
   const selectedStudent = studentList.find(s => s.id === studentSelect.value);
 
   const record = {
@@ -82,15 +72,14 @@ window.takePhoto = async function() {
     name: selectedStudent.name,
     date: todayDateStr,
     time: now.toLocaleTimeString(),
-    photo: photoData,
-    ip: userIP // 儲存 IP 位址
+    photo: photoData
   };
 
   try {
     const docId = `${record.date}_${record.id}`;
     await setDoc(doc(db, "attendance", docId), record);
     const statusMsg = document.getElementById('statusMsg');
-    statusMsg.innerText = `✅ ${selectedStudent.name} 今日（${todayDateStr}）點名成功！(IP: ${userIP})`;
+    statusMsg.innerText = `✅ ${selectedStudent.name} 今日（${todayDateStr}）點名成功！`;
     statusMsg.style.color = "green";
   } catch (err) {
     console.error("提交點名失敗：", err);
