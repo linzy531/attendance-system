@@ -4,6 +4,9 @@ import { collection, getDocs, doc, setDoc } from "https://www.gstatic.com/fireba
 
 const video = document.getElementById('webcam');
 const studentSelect = document.getElementById('studentSelect');
+const agreeCheckbox = document.getElementById('agreeCheckbox');
+const captureBtn = document.getElementById('captureBtn');
+
 let todayDateStr = "";
 let studentList = [];
 
@@ -12,6 +15,21 @@ window.onload = async () => {
   todayDateStr = now.toISOString().split('T')[0];
   const dateDisplay = document.getElementById('todayDateDisplay');
   if (dateDisplay) dateDisplay.innerText = `點名日期：${todayDateStr}`;
+
+  // 監聽 Checkbox 勾選狀態，控制按鈕啟用/停用
+  if (agreeCheckbox && captureBtn) {
+    agreeCheckbox.onchange = () => {
+      if (agreeCheckbox.checked) {
+        captureBtn.disabled = false;
+        captureBtn.style.opacity = "1";
+        captureBtn.style.cursor = "pointer";
+      } else {
+        captureBtn.disabled = true;
+        captureBtn.style.opacity = "0.5";
+        captureBtn.style.cursor = "not-allowed";
+      }
+    };
+  }
 
   try {
     const querySnapshot = await getDocs(collection(db, "students"));
@@ -52,6 +70,11 @@ async function startCamera() {
 }
 
 window.takePhoto = async function() {
+  if (!agreeCheckbox.checked) {
+    alert("請先勾選同意個人資料與影像安全聲明！");
+    return;
+  }
+
   if (!studentSelect.value) {
     alert("請先選擇姓名！");
     return;
