@@ -9,21 +9,26 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   background-color: #f4f6f9;
   color: #333;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  padding: 20px;
+  margin: 0;
+  padding: 0;
 }
 
-.container {
-  background: #ffffff;
-  width: 100%;
+/* 前台點名居中框 */
+.front-container {
   max-width: 460px;
+  margin: 40px auto;
   padding: 30px 25px;
+  background: #ffffff;
   border-radius: 16px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
   text-align: center;
+}
+
+/* 後台寬版外框 */
+.admin-container {
+  max-width: 1200px;
+  margin: 30px auto;
+  padding: 0 20px;
 }
 
 h2 {
@@ -31,13 +36,11 @@ h2 {
   font-weight: 700;
   color: #1a1a1a;
   margin-bottom: 8px;
-  letter-spacing: -0.5px;
 }
 
 #todayDateDisplay {
   font-size: 14px;
   color: #666;
-  font-weight: 500;
   margin-bottom: 20px;
 }
 
@@ -58,7 +61,6 @@ select {
   border-radius: 8px;
   background-color: #fcfcfc;
   outline: none;
-  transition: all 0.2s ease;
   margin-bottom: 20px;
 }
 
@@ -75,7 +77,6 @@ select:focus {
   background-color: #000;
   margin-bottom: 20px;
   aspect-ratio: 4 / 3;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
 }
 
 video {
@@ -95,22 +96,17 @@ video {
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+  transition: background-color 0.2s;
 }
 
 #captureBtn:hover {
   background-color: #0052a3;
 }
 
-#captureBtn:active {
-  transform: scale(0.99);
-}
-
 #statusMsg {
   margin-top: 12px;
   font-size: 14px;
   font-weight: 600;
-  min-height: 20px;
 }
 
 a {
@@ -119,7 +115,6 @@ a {
   text-decoration: none;
   margin-top: 18px;
   display: inline-block;
-  transition: color 0.2s ease;
 }
 
 a:hover {
@@ -127,22 +122,140 @@ a:hover {
   text-decoration: underline;
 }
 
-/* 頁腳修復：放進主結構下方並統一置中 */
-footer {
-  margin-top: 25px;
-  padding-top: 15px;
-  border-top: 1px solid #f0f0f0;
+/* 後台元件樣式 */
+.table-wrapper {
+  overflow-x: auto;
+  margin-top: 15px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px;
+}
+
+th, td {
+  border: 1px solid #eef0f3;
+  padding: 12px;
   text-align: center;
+  font-size: 14px;
 }
 
-footer p {
-  color: #999;
-  font-size: 10px;
-  line-height: 1.5;
+th {
+  background-color: #0066cc;
+  color: white;
+  white-space: nowrap;
 }
 
-footer code {
-  font-family: monospace;
-  font-size: 10px;
-  color: #aaa;
+.status-ok { color: #28a745; font-weight: bold; }
+.status-no { color: #dc3545; background-color: #fff5f5; }
+.photo-thumb { width: 45px; height: 35px; object-fit: cover; border-radius: 4px; display: block; margin: 4px auto 0; }
+
+.charts-container {
+  display: flex;
+  gap: 20px;
+  margin: 25px 0;
+  flex-wrap: wrap;
 }
+
+.chart-box {
+  flex: 1;
+  min-width: 300px;
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.management-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 25px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.form-inline { display: flex; gap: 10px; margin-bottom: 15px; }
+.form-inline input { padding: 10px; border-radius: 6px; border: 1px solid #ddd; }
+
+.student-tag {
+  display: inline-flex;
+  align-items: center;
+  background: #f0f2f5;
+  padding: 6px 12px;
+  border-radius: 20px;
+  margin: 4px;
+  font-size: 14px;
+}
+
+.student-tag button {
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  line-height: 16px;
+  margin-left: 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+#loginSection {
+  max-width: 400px;
+  margin: 60px auto;
+  padding: 30px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+}
+
+.export-btn {
+  background-color: #28a745;
+  color: white;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.home-btn {
+  background-color: #17a2b8;
+  color: white;
+  padding: 8px 16px;
+  text-decoration: none;
+  border-radius: 6px;
+  display: inline-block;
+  font-size: 14px;
+}
+
+/* 頁腳修復：永遠保持在頁面最底部中下方 */
+footer {
+  margin: 50px auto 30px auto;
+  padding-top: 20px;
+  border-top: 1px solid #e6e9ed;
+  text-align: center;
+  max-width: 800px;
+  width: 100%;
+}
+
+.footer-notice {
+  color: #8c98a4;
+  font-size: 11px;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.footer-copy {
+  color: #a0aec0;
+  font-size: 11px;
+}
+
+/* 資工風格 Easter Egg 微調：採用專用黑色代碼背景與等寬字體 */
+.dev-code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font
