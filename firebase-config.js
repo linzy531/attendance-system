@@ -4,16 +4,17 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/11.9.1/firebase
 import { getAuth } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 
 const firebaseConfig = {
- const firebaseConfig = { 
-  apiKey : "AIzaSyBW--aEDkVEu2tNSCm-WDCUmdxdOi-zL7w" , 
-  authDomain : "attendance-system-580e6.firebaseapp.com" , 
-  projectId : "attendance-system-580e6" , 
-  storageBucket : "attendance-system-580e6.firebasestorage.app" , 
-  messagingSenderId : "887294839449" , 
-  appId : "1:887294839449:web:03164a056992b52e6a8608" 
+  apiKey: "AIzaSyBW--aEDkVEu2tNSCm-WDCUmdxdOi-zL7w",
+  authDomain: "attendance-system-580e6.firebaseapp.com",
+  projectId: "attendance-system-580e6",
+  storageBucket: "attendance-system-580e6.firebasestorage.app",
+  messagingSenderId: "887294839449",
+  appId: "1:887294839449:web:03164a056992b52e6a8608"
 };
 
+// 初始化 Firebase
 const app = initializeApp(firebaseConfig);
 
+// 匯出實例供其他 JS 檔案引用
 export const db = getFirestore(app);
 export const auth = getAuth(app);
