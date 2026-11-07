@@ -9,7 +9,7 @@
     } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
     import { 
       collection, 
-      onSnapshot,
+      onSnapshot, 
       doc, 
       setDoc, 
       deleteDoc 
@@ -18,14 +18,13 @@
     let currentStudents = [];
     let currentRecords = [];
 
-    // 確保 HTML DOM 完全載入後才執行 JS
-    document.addEventListener('DOMContentLoaded', () => {
-      
-      // 1. 監聽 Authentication 狀態
+    // --- 核心修復：使用獨立函數直接綁定事件，避免 DOMContentLoaded 沒觸發 ---
+    function initAdmin() {
+      // 1. 監聽 Authentication 登入狀態
       onAuthStateChanged(auth, (user) => {
         const loginSection = document.getElementById('loginSection');
         const adminContent = document.getElementById('adminContent');
-        
+
         if (user) {
           if (loginSection) loginSection.style.display = 'none';
           if (adminContent) adminContent.style.display = 'block';
@@ -82,11 +81,10 @@
           document.getElementById('newStudentName').value = '';
         };
       }
-    });
+    }
 
-    // 即時資料庫監聽器
+    // 即時監聽 Firestore
     function initRealtimeListeners() {
-      // 監聽學生名單
       onSnapshot(collection(db, "students"), (snapshot) => {
         currentStudents = [];
         const container = document.getElementById('studentListTags');
@@ -100,11 +98,11 @@
           const tag = document.createElement('span');
           tag.className = 'student-tag';
           tag.innerHTML = `${s.id} ${s.name} `;
-          
+
           const delBtn = document.createElement('button');
           delBtn.textContent = '×';
           delBtn.onclick = () => deleteStudent(s.id);
-          
+
           tag.appendChild(delBtn);
           container.appendChild(tag);
         });
@@ -112,7 +110,6 @@
         renderMatrixTable();
       });
 
-      // 監聽出席紀錄
       onSnapshot(collection(db, "attendance"), (snapshot) => {
         currentRecords = [];
         snapshot.forEach(docSnap => currentRecords.push(docSnap.data()));
@@ -169,4 +166,7 @@
         tableBody.appendChild(tr);
       });
     }
+
+    // 立即啟動綁定
+    initAdmin();
   </script>
