@@ -21,7 +21,7 @@ window.onload = async () => {
   const dateDisplay = document.getElementById('todayDateDisplay');
   if (dateDisplay) dateDisplay.innerText = `點名日期：${todayDateStr}`;
 
-  // 1. 彈窗閱讀與同意邏輯
+  // 1. 彈窗閱讀控制
   if (openModalBtn && termsModal && confirmAgreeBtn) {
     openModalBtn.onclick = () => {
       termsModal.style.display = 'flex';
@@ -38,7 +38,7 @@ window.onload = async () => {
     };
   }
 
-  // 2. 檢查行政後台開關狀態
+  // 2. 檢查點名開放狀態 (全防護容錯)
   await checkSystemOpen();
 
   // 3. 載入團員名單
@@ -64,8 +64,8 @@ window.onload = async () => {
       });
     }
   } catch (err) {
-    console.error("載入名單失敗：", err);
-    studentSelect.innerHTML = '<option value="">名單載入失敗</option>';
+    console.warn("無法存取團員名單（可由後台新增名單）：", err);
+    studentSelect.innerHTML = '<option value="">名單載入中或未開放權限</option>';
   }
 
   startCamera();
@@ -79,7 +79,8 @@ async function checkSystemOpen() {
       isSystemOpen = docSnap.data().isOpen;
     }
   } catch (e) {
-    console.warn("無法取得點名開放狀態，預設開放", e);
+    console.warn("無法取得開關設定，預設開放點名：", e);
+    isSystemOpen = true;
   }
 
   const statusMsg = document.getElementById('statusMsg');
