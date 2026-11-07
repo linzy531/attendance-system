@@ -16,7 +16,6 @@
     .status-ok { color: green; font-weight: bold; }
     .status-no { color: #dc3545; background-color: #fff0f0; }
     .photo-thumb { width: 45px; height: 35px; object-fit: cover; border-radius: 4px; cursor: pointer; display: block; margin: 4px auto 0; }
-    .ip-tag { font-size: 11px; color: #666; display: block; margin-top: 2px; }
     
     .charts-container {
       display: flex;
@@ -165,37 +164,54 @@
         }
       });
 
-      document.getElementById('emailLoginBtn').onclick = () => {
-        const email = document.getElementById('loginEmail').value;
-        const pass = document.getElementById('loginPassword').value;
-        signInWithEmailAndPassword(auth, email, pass).catch(err => {
-          document.getElementById('loginError').innerText = "登入失敗：" + err.message;
-        });
-      };
+      const emailLoginBtn = document.getElementById('emailLoginBtn');
+      if (emailLoginBtn) {
+        emailLoginBtn.onclick = () => {
+          const email = document.getElementById('loginEmail').value;
+          const pass = document.getElementById('loginPassword').value;
+          signInWithEmailAndPassword(auth, email, pass).catch(err => {
+            const errEl = document.getElementById('loginError');
+            if (errEl) errEl.innerText = "登入失敗：" + err.message;
+          });
+        };
+      }
 
-      document.getElementById('googleLoginBtn').onclick = () => {
-        const provider = new GoogleAuthProvider();
-        signInWithPopup(auth, provider).catch(err => {
-          document.getElementById('loginError').innerText = "Google 登入失敗：" + err.message;
-        });
-      };
+      const googleLoginBtn = document.getElementById('googleLoginBtn');
+      if (googleLoginBtn) {
+        googleLoginBtn.onclick = () => {
+          const provider = new GoogleAuthProvider();
+          signInWithPopup(auth, provider).catch(err => {
+            const errEl = document.getElementById('loginError');
+            if (errEl) errEl.innerText = "Google 登入失敗：" + err.message;
+          });
+        };
+      }
 
-      document.getElementById('logoutBtn').onclick = () => signOut(auth);
+      const logoutBtn = document.getElementById('logoutBtn');
+      if (logoutBtn) {
+        logoutBtn.onclick = () => signOut(auth);
+      }
 
-      document.getElementById('addStudentBtn').onclick = async () => {
-        const id = document.getElementById('newStudentId').value.trim();
-        const name = document.getElementById('newStudentName').value.trim();
-        if (!id || !name) {
-          alert("請填寫座號與姓名！");
-          return;
-        }
-        await setDoc(doc(db, "students", id), { id, name });
-        document.getElementById('newStudentId').value = '';
-        document.getElementById('newStudentName').value = '';
-        loadAllData();
-      };
+      const addStudentBtn = document.getElementById('addStudentBtn');
+      if (addStudentBtn) {
+        addStudentBtn.onclick = async () => {
+          const id = document.getElementById('newStudentId').value.trim();
+          const name = document.getElementById('newStudentName').value.trim();
+          if (!id || !name) {
+            alert("請填寫座號與姓名！");
+            return;
+          }
+          await setDoc(doc(db, "students", id), { id, name });
+          document.getElementById('newStudentId').value = '';
+          document.getElementById('newStudentName').value = '';
+          loadAllData();
+        };
+      }
 
-      document.getElementById('exportExcelBtn').onclick = exportToExcel;
+      const exportExcelBtn = document.getElementById('exportExcelBtn');
+      if (exportExcelBtn) {
+        exportExcelBtn.onclick = exportToExcel;
+      }
     });
 
     async function loadAllData() {
@@ -274,11 +290,9 @@
           if (record) {
             totalPresent++;
             dailyCounts[date]++;
-            const ipDisplay = record.ip ? `<span class="ip-tag">IP: ${record.ip}</span>` : '';
             rowHTML += `
               <td class="status-ok">
                 ✅ ${record.time}
-                ${ipDisplay}
                 <a href="${record.photo}" target="_blank">
                   <img src="${record.photo}" class="photo-thumb" title="點擊檢視照片">
                 </a>
@@ -293,11 +307,9 @@
         tableBody.appendChild(tr);
       });
 
-      // 渲染圖表
-      renderCharts(totalPresent, totalSlots - totalPresent, uniqueDates, dailyCounts);
+      renderCharts(totalPresent, Math.max(0, totalSlots - totalPresent), uniqueDates, dailyCounts);
     }
 
-    // 繪製與更新圖表
     function renderCharts(presentCount, absentCount, dates, dailyCounts) {
       if (pieChartInstance) pieChartInstance.destroy();
       if (barChartInstance) barChartInstance.destroy();
@@ -331,10 +343,8 @@
       });
     }
 
-    // 匯出成 Excel
     function exportToExcel() {
       const table = document.querySelector('table');
-      // 複製表格並移除照片與 HTML 標籤
       const clonedTable = table.cloneNode(true);
       clonedTable.querySelectorAll('img').forEach(img => img.remove());
       
